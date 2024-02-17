@@ -1,0 +1,106 @@
+data
+{
+    // Number of outcomes and predictors
+    int<lower=1> N, K;
+    
+    // Outcomes
+    vector[N] y;
+    // Predictors
+    matrix[N, K] X;
+    
+    // Location and scale of the intercept prior
+    real mu_alpha, sigma_alpha;
+    
+    // Scale of the non-intercept priors (location is 0)
+    vector<lower=0>[K-1] sigma_beta;
+    
+    // Scale of the variance prior
+    real<lower=0> lambda_sigma;
+    
+    // Number of new outcomes to predict
+    int<lower=0> N_new;
+    // New predictors
+    matrix[N_new, K] X_new;
+    // Whether to generate data from prior or posterior distribution
+    int use_prior;
+}
+
+transformed data
+{
+    // Center the predictors
+    vector[K-1] X_bar;
+    matrix[N, K-1] X_c;
+    for(k in 2:K)
+    {
+        X_bar[k-1] = mean(X[, k]);
+        X_c[, k-1] = X[, k] - X_bar[k-1];
+    }
+    
+    // Center the new predictors, if given
+    vector[K-1] X_bar_new;
+    matrix[N_new, K-1] X_c_new;
+    if(N_new > 0)
+    {
+        for(k in 2:K)
+        {
+            X_bar_new[k-1] = mean(X_new[, k]);
+            X_c_new[, k-1] = X_new[, k] - X_bar_new[k-1];
+        }
+    }
+}
+ 
+parameters
+{
+    // Centered intercept
+    real alpha_c;
+    
+    // Non-intercept parameters
+    vector[K-1] beta;
+    
+    // Variance
+    real<lower=0> sigma;
+}
+
+model
+{
+    alpha_c ~ student_t(3, mu_alpha, sigma_alpha);
+    beta ~ student_t(3, 0, sigma_beta);
+    sigma ~ exponential(lambda_sigma);
+    
+    y ~ normal(alpha_c + X_c*beta, sigma);
+}
+
+generated quantities
+{
+    // Non-centered intercept
+    real alpha = alpha_c - dot_product(X_bar, beta);
+    
+    // Expected Value of the prior-or-posterior predictive distribution
+    vector[N_new] mu_rep;
+    // Draw from the prior-or-posterior predictive distribution
+    vector[N_new] y_rep;
+    if(N_new > 0)
+    {
+        real alpha_c_;
+        vector[K-1] beta_;
+        real sigma_;
+        
+        if(use_prior == 1)
+        {
+            // WARNING: the RNG must match the prior
+            alpha_c_ = student_t_rng(3, mu_alpha, sigma_alpha);
+            beta_ = to_vector(student_t_rng(3, 0, sigma_beta));
+            sigma_ = exponential_rng(lambda_sigma);
+        }
+        else
+        {
+            alpha_c_ = alpha_c;
+            beta_ = beta;
+            sigma_ = sigma;
+        }
+        
+        // WARNING: must match the likelihood
+        mu_rep = alpha_c_ + X_c_new*beta_;
+        y_rep = to_vector(normal_rng(mu_rep, sigma_));
+    }
+}
