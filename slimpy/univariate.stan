@@ -1,3 +1,21 @@
+/*
+Univariate linear model with normal likelihood: y ~ N(µ, σ) and robust priors.
+
+μ is usually written α_0 + Σ X_i β_i, where α_0 represents the expected value of
+y when all predictors equal 0. It is however easier to define a prior on the
+intercept after centering the predictors around 0; let Xbar_i be the mean of the
+i-th predictors value, we then have:
+
+µ = α_c + Σ (X_i - Xbar_i) β_i
+α_c = α_0 + Σ Xbar_i β_i ~ Student(3, μ_α, σ_α)
+βᵢ ~ Student(3, 0, σ_βᵢ)
+σ ~ Exp(λ_σ)
+
+Note than when predicting data, the new predictors must be offset by the mean of
+the *original* predictors.
+
+*/
+    
 data
 {
     // Number of outcomes and predictors
@@ -36,15 +54,13 @@ transformed data
         X_c[, k-1] = X[, k] - X_bar[k-1];
     }
     
-    // Center the new predictors, if given
-    vector[K-1] X_bar_new;
+    // Center the new predictors, if given, around the *original* predictors
     matrix[N_new, K-1] X_c_new;
     if(N_new > 0)
     {
         for(k in 2:K)
         {
-            X_bar_new[k-1] = mean(X_new[, k]);
-            X_c_new[, k-1] = X_new[, k] - X_bar_new[k-1];
+            X_c_new[, k-1] = X_new[, k] - X_bar[k-1];
         }
     }
 }
