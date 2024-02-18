@@ -1,13 +1,12 @@
+import re
+
 class PredictorMapper:
     """ Map the low-level stan names to the high-level predictor names
     """
     
     def __init__(self, predictors):
-        self._alpha = {}
-        self._beta = {}
-        self._sigma = {}
-        
         self._alpha = "Intercept"
+        self._beta = {}
         
         names = predictors.filter(regex="^(?!Intercept)").columns
         for name_index, name in enumerate(names):
@@ -17,13 +16,14 @@ class PredictorMapper:
         if not isinstance(x, str):
             return [self.__call__(item) for item in x]
         
-        if "." in x:
-            kind, index = x.rsplit(".", 1)
+        match = re.match("(.+)\[(\d+)\]", x)
+        if match:
+            kind, index = match.groups()
             index = int(index)
         else:
             kind = x
             index = None
-        
+            
         if kind == "alpha":
             return self._alpha
         elif kind == "alpha_c":
