@@ -14,13 +14,13 @@ class Model:
         self._formula = formula
         self._data = data
         
-        self._outcomes, self._predictors = formulaic.model_matrix(formula, data)
-        self._outcomes = numpy.array(self._outcomes).squeeze()
-        self._predictors = pandas.DataFrame(self._predictors)
+        self._outcomes, self._predictors = [
+            pandas.DataFrame(a) for a in formulaic.model_matrix(formula, data)]
         self._predictor_mapper = PredictorMapper(self._predictors)
         
-        outcomes_mean = numpy.mean(self._outcomes)
-        outcomes_scale = numpy.std(self._outcomes)
+        outcomes = numpy.array(self._outcomes).squeeze()
+        outcomes_mean = numpy.mean(outcomes)
+        outcomes_scale = numpy.std(outcomes)
         
         predictors_scale = numpy.std(
             self._predictors.filter(regex="^(?!.*Intercept)"))
@@ -28,8 +28,7 @@ class Model:
         
         self._fit_data = {
             "N": self._predictors.shape[0], "K": self._predictors.shape[1],
-            
-            "y": self._outcomes, "X": self._predictors.values,
+            "y": outcomes, "X": self._predictors.values,
             
             "mu_alpha": outcomes_mean, "sigma_alpha": outcomes_scale,
             "sigma_beta": (outcomes_scale/predictors_scale),
@@ -57,6 +56,14 @@ class Model:
     @property
     def data(self):
         return self._data
+    
+    @property
+    def predictors(self):
+        return self._predictors
+    
+    @property
+    def outcomes(self):
+        return self._outcomes
     
     @property
     def fit_data(self):
