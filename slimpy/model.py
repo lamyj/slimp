@@ -107,14 +107,14 @@ class Model:
         summary.index = self._predictor_mapper(summary.index)
         return summary.iloc[[not x.endswith("__") for x in summary.index], :]
     
-    def predict(self, data, use_prior=0, **kwargs):
+    def predict(self, data, use_prior=False, **kwargs):
         data = data.astype(
             {k: v for k, v in self._data.dtypes.items() if k in data.columns})
         predictors = pandas.DataFrame(
             formulaic.model_matrix(self.formula.split("~")[1], data))
         fit_data = self._fit_data | {
             "N_new": predictors.shape[0], "X_new": predictors.values.tolist(),
-            "use_prior": use_prior}
+            "use_prior": int(use_prior)}
         
         fit = self._model.generate_quantities(fit_data, self._fit)
         draws = fit.draws_pd()
