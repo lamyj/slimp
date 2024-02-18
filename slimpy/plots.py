@@ -2,6 +2,26 @@ import matplotlib.pyplot
 import numpy
 import seaborn
 
+def parameters_plot(model, include=None, exclude=None, **kwargs):
+    if include is None:
+        include = model.draws.columns
+    if exclude is None:
+        exclude = []
+    
+    columns = [
+        x for x in model.draws.columns
+        if x in include and x not in exclude]
+    
+    kwargs.setdefault("estimator", numpy.median)
+    kwargs.setdefault("errorbar", ("pi", 90))
+    
+    ax = seaborn.pointplot(
+        model.draws[columns].melt(),
+        x="value", y="variable",
+        linestyle="none",
+        **kwargs)
+    ax.set(xlabel=model.outcomes.columns[0], ylabel=None)
+
 def predictive_plot(
         model, use_prior=False, predict_kwargs={}, count=50, alpha=0.2,
         plot_kwargs={}):
