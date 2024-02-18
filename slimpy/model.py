@@ -88,14 +88,15 @@ class Model:
         # NOTE: this directory must remain during the lifetime of the object
         directory = tempfile.mkdtemp()
         kwargs["output_dir"] = directory
+        kwargs["sig_figs"] = 18
         
         self._fit = self._model.sample(self._fit_data, **kwargs)
         
         self._draws = self._fit.draws_pd()
         self._draws.columns = self._predictor_mapper(self._draws.columns)
     
-    def summary(self, *args, **kwargs):
-        summary = self._fit.summary(*args, **kwargs)
+    def summary(self, percentiles=(5, 50, 95), sig_figs=18):
+        summary = self._fit.summary(percentiles, sig_figs)
         summary.index = self._predictor_mapper(summary.index)
         return summary.iloc[[not x.endswith("__") for x in summary.index], :]
     
