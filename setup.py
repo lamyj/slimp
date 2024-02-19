@@ -40,7 +40,7 @@ setuptools.setup(
     name="slimp",
     version="0.1.1",
     
-    description="Linear models with stan and Pandas",
+    description="Linear models with Stan and Pandas",
     
     author="Julien Lamy",
     author_email="lamy@unistra.fr",
