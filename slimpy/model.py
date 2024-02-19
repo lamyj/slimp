@@ -38,7 +38,6 @@ class Model:
         }
         
         self._model = cmdstanpy.CmdStanModel(
-            # FIXME: location
             exe_file=os.path.join(os.path.dirname(__file__), "univariate"))
         self._fit = None
         self._draws = None
