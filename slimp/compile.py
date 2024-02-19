@@ -10,7 +10,8 @@ def compile(
     """
     
     source_copy = os.path.join(target_dir, os.path.basename(source))
-    shutil.copy(source, source_copy)
+    if target_dir != os.path.dirname(source):
+        shutil.copy(source, source_copy)
     subprocess.check_call(
         [
             "make", "-C", os.environ["CMDSTAN"],
@@ -20,4 +21,5 @@ def compile(
             *(["STAN_OPENCL=TRUE"] if opencl else []),
             *(["STAN_NO_RANGE_CHECKS=TRUE"] if not range_checks else [])],
         env=os.environ | {"CXXFLAGS": cxxflags or ""})
-    os.unlink(source_copy)
+    if target_dir != os.path.dirname(source):
+        os.unlink(source_copy)
