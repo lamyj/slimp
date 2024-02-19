@@ -5,8 +5,8 @@ import sys
 import setuptools
 import setuptools.command.build
 
-sys.path.insert(0, "slimpy")
-import compile as slimpy_compile
+sys.path.insert(0, "slimp")
+import compile as slimp_compile
 
 class BuildStanModels(setuptools.Command, setuptools.command.build.SubCommand):
     def __init__(self, *args, **kwargs):
@@ -22,13 +22,13 @@ class BuildStanModels(setuptools.Command, setuptools.command.build.SubCommand):
         pass
         
     def finalize_options(self):
-        self.sources = list(glob.glob("slimpy/*.stan"))
+        self.sources = list(glob.glob("slimp/*.stan"))
         self.set_undefined_options("build_py", ("build_lib", "build_lib"))
     
     def run(self):
         for source in self.sources:
-            slimpy_compile.compile(
-                source, os.path.join(self.build_lib, "slimpy"),
+            slimp_compile.compile(
+                source, os.path.join(self.build_lib, "slimp"),
                 range_checks=False)
     
     def get_source_files(self):
@@ -37,7 +37,7 @@ class BuildStanModels(setuptools.Command, setuptools.command.build.SubCommand):
 setuptools.command.build.build.sub_commands.append(("build_stan_models", None))
 
 setuptools.setup(
-    name="slimpy",
+    name="slimp",
     version="0.1.1",
     
     description="Linear models with stan and Pandas",
@@ -47,7 +47,7 @@ setuptools.setup(
     
     cmdclass={"build_stan_models": BuildStanModels},
 
-    packages=["slimpy"],
+    packages=["slimp"],
     
     install_requires=[
         "cmdstanpy",
