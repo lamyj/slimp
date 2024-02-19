@@ -1,4 +1,5 @@
 import os
+import pathlib
 import shutil
 import tempfile
 
@@ -124,6 +125,7 @@ class Model:
     
     def __getstate__(self):
         with tempfile.TemporaryDirectory() as directory:
+            directory = pathlib.Path(directory)
             self._fit.save_csvfiles(directory)
             chains = {}
             for chain in directory.glob("*csv"):
