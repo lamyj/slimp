@@ -1,4 +1,4 @@
-def r_squared(model, how="model", **kwargs):
+def r_squared(model, **kwargs):
     # https://avehtari.github.io/bayes_R2/bayes_R2.html
     
     mu, _ = model.predict(model.data, **kwargs)
