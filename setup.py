@@ -38,7 +38,7 @@ setuptools.command.build.build.sub_commands.append(("build_stan_models", None))
 
 setuptools.setup(
     name="slimpy",
-    version="0.1.0",
+    version="0.1.1",
     
     description="Linear models with stan and Pandas",
     
