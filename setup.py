@@ -16,20 +16,23 @@ class BuildStanModels(setuptools.Command, setuptools.command.build.SubCommand):
         self.editable_mode = False
         
         self.sources = []
-        self.binaries = []
+        self.use_opencl = False
     
     def initialize_options(self):
         pass
         
     def finalize_options(self):
         self.sources = list(glob.glob("slimp/*.stan"))
+        self.use_opencl = (
+            os.environ.get("SLIMP_OPENCL", "").lower() in ["1", "true"])
         self.set_undefined_options("build_py", ("build_lib", "build_lib"))
     
     def run(self):
+        print("run")
         for source in self.sources:
             slimp_compile.compile(
                 source, os.path.join(self.build_lib, "slimp"),
-                range_checks=False)
+                opencl=self.use_opencl, range_checks=False)
     
     def get_source_files(self):
         return self.sources
