@@ -73,8 +73,9 @@ parameters
     // Non-intercept parameters
     vector[K-1] beta;
     
-    // Variance
-    real<lower=0> sigma;
+    // Variance. NOTE: it cannot be 0 or infinity, this causes warnings in the
+    // likelihood. Values are taken from std::numeric_limits<float>.
+    real<lower=1.2e-38, upper=3.4e+38> sigma;
 }
 
 model
@@ -83,7 +84,7 @@ model
     beta ~ student_t(3, 0, sigma_beta);
     sigma ~ exponential(lambda_sigma);
     
-    y ~ normal(alpha_c + X_c*beta, sigma);
+    y ~ normal_id_glm(X_c, alpha_c, beta, sigma);
 }
 
 generated quantities
