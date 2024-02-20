@@ -102,8 +102,8 @@ class Model:
         self._draws = self._fit.draws_pd()
         self._draws.columns = self._predictor_mapper(self._draws.columns)
     
-    def summary(self, percentiles=(5, 50, 95), sig_figs=18):
-        summary = self._fit.summary(percentiles, sig_figs)
+    def summary(self, percentiles=(5, 50, 95)):
+        summary = self._fit.summary(percentiles, sig_figs=18)
         summary.index = self._predictor_mapper(summary.index)
         return summary.iloc[[not x.endswith("__") for x in summary.index], :]
     
@@ -116,7 +116,7 @@ class Model:
             "N_new": predictors.shape[0], "X_new": predictors.values.tolist(),
             "use_prior": int(use_prior)}
         
-        fit = self._model.generate_quantities(fit_data, self._fit)
+        fit = self._model.generate_quantities(fit_data, self._fit, **kwargs)
         draws = fit.draws_pd()
         
         predictor_mapper = PredictorMapper(predictors)
