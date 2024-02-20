@@ -1,5 +1,6 @@
 import glob
 import os
+import shlex
 import sys
 
 import setuptools
@@ -16,23 +17,27 @@ class BuildStanModels(setuptools.Command, setuptools.command.build.SubCommand):
         self.editable_mode = False
         
         self.sources = []
-        self.use_opencl = False
+        self.stanc_options = ""
+        self.cxxflags = ""
     
     def initialize_options(self):
         pass
         
     def finalize_options(self):
         self.sources = list(glob.glob("slimp/*.stan"))
-        self.use_opencl = (
-            os.environ.get("SLIMP_OPENCL", "").lower() in ["1", "true"])
+        self.stanc_options = shlex.split(
+            os.environ.get("SLIMP_STANC_OPTIONS", ""))
+        for option in ["STAN_CPP_OPTIMS", "STAN_THREADS", "STAN_NO_RANGE_CHECKS"]:
+            if not any(x.startswith(f"{option}=") for x in self.stanc_options):
+                self.stanc_options.append(f"{option}=TRUE")
+        self.cxxflags = os.environ.get("SLIMP_CXXFLAGS", "")
         self.set_undefined_options("build_py", ("build_lib", "build_lib"))
     
     def run(self):
-        print("run")
         for source in self.sources:
             slimp_compile.compile(
                 source, os.path.join(self.build_lib, "slimp"),
-                opencl=self.use_opencl, range_checks=False)
+                self.stanc_options, self.cxxflags)
     
     def get_source_files(self):
         return self.sources
