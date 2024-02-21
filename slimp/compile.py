@@ -3,8 +3,6 @@ import re
 import shutil
 import subprocess
 
-import cmdstanpy
-
 def compile(source, target_dir, stanc_options=None, cxxflags=None):
     """ Compile a CmdStan model
     """
