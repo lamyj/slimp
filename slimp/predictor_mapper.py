@@ -30,5 +30,7 @@ class PredictorMapper:
             return f"{self._alpha}_c"
         elif kind == "beta":
             return self._beta[index]
+        elif kind.endswith("_") and not kind.endswith("__"):
+            return f"{kind[:-1]}[{index}]"
         else:
             return x

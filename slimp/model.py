@@ -18,6 +18,7 @@ class Model:
         self._outcomes, self._predictors = [
             pandas.DataFrame(a) for a in formulaic.model_matrix(formula, data)]
         self._predictor_mapper = PredictorMapper(self._predictors)
+        self._predictors_columns = []
         
         outcomes = numpy.array(self._outcomes).squeeze()
         outcomes_mean = numpy.mean(outcomes)
@@ -44,7 +45,7 @@ class Model:
         self._draws = None
     
     def __del__(self):
-        if self._fit is not None:
+        if getattr(self, "_fit") is not None:
             directory = os.path.dirname(self._fit.runset.csv_files[0])
             if os.path.isdir(directory):
                 shutil.rmtree(directory)
@@ -71,8 +72,19 @@ class Model:
     
     @property
     def draws(self):
-        return self._draws.iloc[
-            :, [not x.endswith("__") for x in self._draws.columns]]
+        return self._draws.iloc[:, self._predictors_columns]
+    
+    @property
+    def posterior_epred(self):
+        return self._draws.filter(like="mu_rep")
+    
+    @property
+    def posterior_predict(self):
+        return self._draws.filter(like="y_rep")
+    
+    @property
+    def log_likelihood(self):
+        return self._draws.filter(like="log_likelihood")
     
     @property
     def hmc_diagnostics(self):
@@ -100,12 +112,19 @@ class Model:
         self._fit = self._model.sample(self._fit_data, **kwargs)
         
         self._draws = self._fit.draws_pd()
+        
+        self._predictors_columns = []
+        for index, column in enumerate(self._draws.columns):
+            if not column.split("[")[0].endswith("_"):
+                self._predictors_columns.append(index)
+        
         self._draws.columns = self._predictor_mapper(self._draws.columns)
     
     def summary(self, percentiles=(5, 50, 95)):
         summary = self._fit.summary(percentiles, sig_figs=18)
+        summary = summary.iloc[[not x.split("[")[0].endswith("_") for x in summary.index], :]
         summary.index = self._predictor_mapper(summary.index)
-        return summary.iloc[[not x.endswith("__") for x in summary.index], :]
+        return summary
     
     def predict(self, data, use_prior=False, **kwargs):
         data = data.astype(
@@ -121,28 +140,29 @@ class Model:
         
         predictor_mapper = PredictorMapper(predictors)
         draws.columns = predictor_mapper(draws.columns)
-        return draws.filter(regex="mu_rep"), draws.filter(regex="y_rep")
+        return draws.filter(like="mu_rep"), draws.filter(like="y_rep")
+    
+    __state_variables = [
+        "_formula", "_data", "_outcomes", "_predictors", "_predictor_mapper",
+        "_predictors_columns", "_fit_data", "_draws"]
     
     def __getstate__(self):
         with tempfile.TemporaryDirectory() as directory:
-            directory = pathlib.Path(directory)
+            # NOTE: need to keep this directory after __getstate__
+            directory = pathlib.Path(tempfile.mkdtemp())
             self._fit.save_csvfiles(directory)
             chains = {}
             for chain in directory.glob("*csv"):
                 chains[chain.name] = chain.open().read()
         
         return {
-            **{x: getattr(self, x) for x in [
-                "_formula", "_data", "_outcomes", "_predictors",
-                "_predictor_mapper", "_fit_data", "_draws"]},
+            **{x: getattr(self, x) for x in Model.__state_variables},
             "model": {"exe_file": self._model.exe_file},
             "chains": chains}
     
     def __setstate__(self, state):
         self.__dict__.update({
-            x: state[x] for x in [
-                "_formula", "_data", "_outcomes", "_predictors",
-                "_predictor_mapper", "_fit_data", "_draws"]})
+            x: state[x] for x in Model.__state_variables})
         self._model = cmdstanpy.CmdStanModel(**state["model"])
         
         # NOTE: need to keep this directory after __setstate__

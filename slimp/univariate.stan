@@ -93,10 +93,11 @@ generated quantities
     real alpha = alpha_c - dot_product(X_bar, beta);
     
     // Expected Value of the prior-or-posterior predictive distribution
-    vector[N_new] mu_rep;
+    vector[N_new!=0 ? N_new : N] mu_rep_;
     // Draw from the prior-or-posterior predictive distribution
-    vector[N_new] y_rep;
-    if(N_new > 0)
+    vector[N_new!=0 ? N_new : N] y_rep_;
+    // Log-likelihood
+    vector[N] log_likelihood_;
     {
         real alpha_c_;
         vector[K-1] beta_;
@@ -116,8 +117,21 @@ generated quantities
             sigma_ = sigma;
         }
         
-        // WARNING: must match the likelihood
-        mu_rep = alpha_c_ + X_c_new*beta_;
-        y_rep = to_vector(normal_rng(mu_rep, sigma_));
+        if(N_new > 0)
+        {
+            // WARNING: must match the likelihood
+            mu_rep_ = alpha_c_ + X_c_new*beta_;
+        }
+        else
+        {
+            mu_rep_ = alpha_c_ + X_c*beta_;
+        }
+        
+        y_rep_ = to_vector(normal_rng(mu_rep_, sigma_));
+        
+        for(i in 1:N)
+        {
+            log_likelihood_[i] = normal_lpdf(y[i] | mu_rep_[i], sigma_);
+        }
     }
 }
