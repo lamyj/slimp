@@ -12,13 +12,11 @@ from .predictor_mapper import PredictorMapper
 
 class Model:
     def __init__(self, formula, data):
-        self._formula = formula
-        self._data = data
-        
         self._update_model_data(formula, data)
         self._update_programs()
         self._update_draws()
-        
+        self._update_generated_quantities()
+    
     def __del__(self):
         if getattr(self, "_fit") is not None:
             directory = os.path.dirname(self._fit.runset.csv_files[0])
@@ -50,16 +48,47 @@ class Model:
         return self._draws
     
     @property
+    def prior_predict(self):
+        if self._y_prior is None:
+            fit = self._programs["predict_prior"].generate_quantities(
+                self._fit_data | {
+                    "N_new": self._fit_data["N"], "X_new": self._fit_data["X"]},
+                self._fit)
+            draws = fit.draws_pd()
+            self._y_prior = draws.filter(like="y")
+        return self._y_prior
+    
+    @property
     def posterior_epred(self):
-        return self._draws.filter(like="mu_rep")
+        if self._mu_posterior is None:
+            fit = self._programs["predict_posterior"].generate_quantities(
+                self._fit_data | {
+                    "N_new": self._fit_data["N"], "X_new": self._fit_data["X"]},
+                self._fit)
+            draws = fit.draws_pd()
+            self._mu_posterior = draws.filter(like="mu")
+            self._y_posterior = draws.filter(like="y")
+        return self._mu_posterior
     
     @property
     def posterior_predict(self):
-        return self._draws.filter(like="y_rep")
+        if self._y_posterior is None:
+            fit = self._programs["predict_posterior"].generate_quantities(
+                self._fit_data | {
+                    "N_new": self._fit_data["N"], "X_new": self._fit_data["X"]},
+                self._fit)
+            draws = fit.draws_pd()
+            self._mu_posterior = draws.filter(like="mu")
+            self._y_posterior = draws.filter(like="y")
+        return self._y_posterior
     
     @property
     def log_likelihood(self):
-        return self._draws.filter(like="log_likelihood")
+        if self._log_likelihood is None:
+            fit = self._programs["log_likelihood"].generate_quantities(
+                self._fit_data, self._fit)
+            self._log_likelihood = fit.draws_pd().filter(like="log_likelihood")
+        return self._log_likelihood
     
     @property
     def hmc_diagnostics(self):
@@ -84,18 +113,12 @@ class Model:
         kwargs["output_dir"] = directory
         kwargs["sig_figs"] = 18
         
-        self._fit = self._model.sample(self._fit_data, **kwargs)
+        self._fit = self._programs["sampler"].sample(self._fit_data, **kwargs)
+        self._update_draws()
         
-        self._draws = self._fit.draws_pd()
-        
-        self._predictors_columns = []
-        for index, column in enumerate(self._draws.columns):
-            if not column.split("[")[0].endswith("_"):
-                self._predictors_columns.append(index)
-        
-        self._diagnostics = self._fit.draws_pd().filter(regex="_$")
-        self._draws = self._fit.draws_pd().filter(regex="[^_]$")
-        self._draws.columns = self._predictor_mapper(self._draws.columns)
+        self._log_likelihood = None
+        self._mu_posterior = None
+        self._y_posterior = None
     
     def summary(self, percentiles=(5, 50, 95)):
         summary = self._fit.summary(percentiles, sig_figs=18)
@@ -103,23 +126,24 @@ class Model:
         summary.index = self._predictor_mapper(summary.index)
         return summary
     
-    def predict(self, data, use_prior=False, **kwargs):
+    def predict(self, data, **kwargs):
         data = data.astype(
             {k: v for k, v in self._data.dtypes.items() if k in data.columns})
         predictors = pandas.DataFrame(
             formulaic.model_matrix(self.formula.split("~")[1], data))
         fit_data = self._fit_data | {
-            "N_new": predictors.shape[0], "X_new": predictors.values.tolist(),
-            "use_prior": int(use_prior)}
+            "N_new": predictors.shape[0], "X_new": predictors.values.tolist()}
         
-        fit = self._model.generate_quantities(fit_data, self._fit, **kwargs)
+        fit = self._programs["predict_posterior"].generate_quantities(
+            fit_data, self._fit, **kwargs)
         draws = fit.draws_pd()
         
-        predictor_mapper = PredictorMapper(predictors)
-        draws.columns = predictor_mapper(draws.columns)
-        return draws.filter(like="mu_rep"), draws.filter(like="y_rep")
+        return draws.filter(like="mu"), draws.filter(like="y")
     
     def _update_model_data(self, formula, data):
+        self._formula = formula
+        self._data = data
+        
         self._outcomes, self._predictors = [
             pandas.DataFrame(a) for a in formulaic.model_matrix(formula, data)]
         self._predictor_mapper = PredictorMapper(self._predictors)
@@ -141,16 +165,24 @@ class Model:
         }
     
     def _update_programs(self, chains=None):
-        self._model = cmdstanpy.CmdStanModel(
-            exe_file=os.path.join(os.path.dirname(__file__), "univariate"))
+        self._programs = {
+            x: cmdstanpy.CmdStanModel(
+                exe_file=os.path.join(
+                    os.path.dirname(__file__), f"univariate_{x}"))
+            for x in [
+                "sampler", "predict_prior", "predict_posterior",
+                "log_likelihood"]
+        }
+        
         if chains is not None:
             directory = pathlib.Path(tempfile.mkdtemp())
-            chains = []
-            for path, chain in state["chains"].items():
+            paths = []
+            for path, chain in chains.items():
                 with (directory/path).open("w") as fd:
                     fd.write(chain)
-                chains.append(str(directory/path))
-            self._fit = cmdstanpy.from_csv(chains)
+                paths.append(str(directory/path))
+            self._fit = cmdstanpy.from_csv(paths)
+            self._fit._sig_figs = 18
         else:
             self._fit = None
     
@@ -162,6 +194,17 @@ class Model:
             self._draws = self._fit.draws_pd().filter(regex="[^_]$")
             self._draws.columns = self._predictor_mapper(self._draws.columns)
     
+    def _update_generated_quantities(self, state=None):
+        self._log_likelihood = None
+        self._y_prior = None
+        self._mu_posterior = None
+        self._y_posterior = None
+        if state is not None:
+            members = [
+                "log_likelihood", "y_prior", "mu_posterior", "y_posterior"]
+            for member in members:
+                setattr(self, f"_{member}", state.get(member))
+    
     def __getstate__(self):
         chains = None
         if self._fit is not None:
@@ -171,15 +214,20 @@ class Model:
                 self._fit.save_csvfiles(directory)
                 chains = {}
                 for chain in directory.glob("*csv"):
-                    chains[chain.name] = chain.open().read()
+                    with open(chain) as fd:
+                        chains[chain.name] = fd.read()
         
+        members = [
+            "log_likelihood", "y_prior", "mu_posterior", "y_posterior"]
         return {
             "formula": self._formula, "data": self._data,
-            **({"chains": chains} if chains else {})
+            **({"chains": chains} if chains else {}),
+            **{member: getattr(self, f"_{member}") for member in members}
         }
     
     def __setstate__(self, state):
         self._update_model_data(state["formula"], state["data"])
         self._update_programs(state.get("chains"))
         self._update_draws()
+        self._update_generated_quantities(state)
 
