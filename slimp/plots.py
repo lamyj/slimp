@@ -26,7 +26,7 @@ def parameters_plot(model, include=None, exclude=None, **kwargs):
 def predictive_plot(
         model, use_prior=False, predict_kwargs={}, count=50, alpha=0.2,
         plot_kwargs={}):
-    _, y_posterior = model.predict(model.data, use_prior, **predict_kwargs)
+    y_posterior = model.posterior_predict
     if "seed" in predict_kwargs:
         numpy.random.seed(predict_kwargs["seed"])
     subset = numpy.random.randint(0, len(y_posterior), count)
