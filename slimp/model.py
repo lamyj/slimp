@@ -42,6 +42,7 @@ class Model:
         self._model = cmdstanpy.CmdStanModel(
             exe_file=os.path.join(os.path.dirname(__file__), "univariate"))
         self._fit = None
+        self._diagnostics = None
         self._draws = None
     
     def __del__(self):
@@ -72,7 +73,7 @@ class Model:
     
     @property
     def draws(self):
-        return self._draws.iloc[:, self._predictors_columns]
+        return self._draws
     
     @property
     def posterior_epred(self):
@@ -90,7 +91,7 @@ class Model:
     def hmc_diagnostics(self):
         max_depth = self._fit.metadata.cmdstan_config["max_depth"]
         data = (
-            self._draws.groupby("chain__")
+            self._diagnostics.groupby("chain__")
             .agg(
                 divergent=("divergent__", lambda x: numpy.sum(x!=0)),
                 depth_exceeded=(
@@ -118,6 +119,8 @@ class Model:
             if not column.split("[")[0].endswith("_"):
                 self._predictors_columns.append(index)
         
+        self._diagnostics = self._fit.draws_pd().filter(regex="_$")
+        self._draws = self._fit.draws_pd().filter(regex="[^_]$")
         self._draws.columns = self._predictor_mapper(self._draws.columns)
     
     def summary(self, percentiles=(5, 50, 95)):
