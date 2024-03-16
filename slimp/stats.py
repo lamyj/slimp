@@ -1,4 +1,4 @@
-def r_squared(model, **kwargs):
+def r_squared(model):
     # https://avehtari.github.io/bayes_R2/bayes_R2.html
     
     mu = model.posterior_epred
