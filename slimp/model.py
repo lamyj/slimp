@@ -15,36 +15,10 @@ class Model:
         self._formula = formula
         self._data = data
         
-        self._outcomes, self._predictors = [
-            pandas.DataFrame(a) for a in formulaic.model_matrix(formula, data)]
-        self._predictor_mapper = PredictorMapper(self._predictors)
-        self._predictors_columns = []
+        self._update_model_data(formula, data)
+        self._update_programs()
+        self._update_draws()
         
-        outcomes = numpy.array(self._outcomes).squeeze()
-        outcomes_mean = numpy.mean(outcomes)
-        outcomes_scale = numpy.std(outcomes)
-        
-        predictors_scale = numpy.std(
-            self._predictors.filter(regex="^(?!.*Intercept)"))
-        predictors_scale[predictors_scale==0] = 1e-20
-        
-        self._fit_data = {
-            "N": self._predictors.shape[0], "K": self._predictors.shape[1],
-            "y": outcomes, "X": self._predictors.values,
-            
-            "mu_alpha": outcomes_mean, "sigma_alpha": outcomes_scale,
-            "sigma_beta": (outcomes_scale/predictors_scale),
-            "lambda_sigma": 1/outcomes_scale,
-            
-            "N_new": 0, "use_prior": 0
-        }
-        
-        self._model = cmdstanpy.CmdStanModel(
-            exe_file=os.path.join(os.path.dirname(__file__), "univariate"))
-        self._fit = None
-        self._diagnostics = None
-        self._draws = None
-    
     def __del__(self):
         if getattr(self, "_fit") is not None:
             directory = os.path.dirname(self._fit.runset.csv_files[0])
@@ -145,34 +119,67 @@ class Model:
         draws.columns = predictor_mapper(draws.columns)
         return draws.filter(like="mu_rep"), draws.filter(like="y_rep")
     
-    __state_variables = [
-        "_formula", "_data", "_outcomes", "_predictors", "_predictor_mapper",
-        "_predictors_columns", "_fit_data", "_draws"]
+    def _update_model_data(self, formula, data):
+        self._outcomes, self._predictors = [
+            pandas.DataFrame(a) for a in formulaic.model_matrix(formula, data)]
+        self._predictor_mapper = PredictorMapper(self._predictors)
+        outcomes = numpy.array(self._outcomes).squeeze()
+        outcomes_mean = numpy.mean(outcomes)
+        outcomes_scale = numpy.std(outcomes)
+        
+        predictors_scale = numpy.std(
+            self._predictors.filter(regex="^(?!.*Intercept)"))
+        predictors_scale[predictors_scale==0] = 1e-20
+        
+        self._fit_data = {
+            "N": self._predictors.shape[0], "K": self._predictors.shape[1],
+            "y": outcomes, "X": self._predictors.values,
+            
+            "mu_alpha": outcomes_mean, "sigma_alpha": outcomes_scale,
+            "sigma_beta": (outcomes_scale/predictors_scale),
+            "lambda_sigma": 1/outcomes_scale
+        }
+    
+    def _update_programs(self, chains=None):
+        self._model = cmdstanpy.CmdStanModel(
+            exe_file=os.path.join(os.path.dirname(__file__), "univariate"))
+        if chains is not None:
+            directory = pathlib.Path(tempfile.mkdtemp())
+            chains = []
+            for path, chain in state["chains"].items():
+                with (directory/path).open("w") as fd:
+                    fd.write(chain)
+                chains.append(str(directory/path))
+            self._fit = cmdstanpy.from_csv(chains)
+        else:
+            self._fit = None
+    
+    def _update_draws(self):
+        self._diagnostics = None
+        self._draws = None
+        if self._fit is not None:
+            self._diagnostics = self._fit.draws_pd().filter(regex="_$")
+            self._draws = self._fit.draws_pd().filter(regex="[^_]$")
+            self._draws.columns = self._predictor_mapper(self._draws.columns)
     
     def __getstate__(self):
-        with tempfile.TemporaryDirectory() as directory:
+        chains = None
+        if self._fit is not None:
+            with tempfile.TemporaryDirectory() as directory:
             # NOTE: need to keep this directory after __getstate__
-            directory = pathlib.Path(tempfile.mkdtemp())
-            self._fit.save_csvfiles(directory)
-            chains = {}
-            for chain in directory.glob("*csv"):
-                chains[chain.name] = chain.open().read()
+                directory = pathlib.Path(tempfile.mkdtemp())
+                self._fit.save_csvfiles(directory)
+                chains = {}
+                for chain in directory.glob("*csv"):
+                    chains[chain.name] = chain.open().read()
         
         return {
-            **{x: getattr(self, x) for x in Model.__state_variables},
-            "model": {"exe_file": self._model.exe_file},
-            "chains": chains}
+            "formula": self._formula, "data": self._data,
+            **({"chains": chains} if chains else {})
+        }
     
     def __setstate__(self, state):
-        self.__dict__.update({
-            x: state[x] for x in Model.__state_variables})
-        self._model = cmdstanpy.CmdStanModel(**state["model"])
-        
-        # NOTE: need to keep this directory after __setstate__
-        directory = pathlib.Path(tempfile.mkdtemp())
-        chains = []
-        for path, chain in state["chains"].items():
-            with (directory/path).open("w") as fd:
-                fd.write(chain)
-            chains.append(str(directory/path))
-        self._fit = cmdstanpy.from_csv(chains)
+        self._update_model_data(state["formula"], state["data"])
+        self._update_programs(state.get("chains"))
+        self._update_draws()
+
