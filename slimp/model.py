@@ -18,7 +18,7 @@ class Model:
         self._update_generated_quantities()
     
     def __del__(self):
-        if getattr(self, "_fit") is not None:
+        if getattr(self, "_fit", None) is not None:
             directory = os.path.dirname(self._fit.runset.csv_files[0])
             if os.path.isdir(directory):
                 shutil.rmtree(directory)
@@ -144,35 +144,67 @@ class Model:
         self._formula = formula
         self._data = data
         
-        self._outcomes, self._predictors = [
-            pandas.DataFrame(a) for a in formulaic.model_matrix(formula, data)]
-        self._predictor_mapper = PredictorMapper(self._predictors)
-        outcomes = numpy.array(self._outcomes).squeeze()
-        outcomes_mean = numpy.mean(outcomes)
-        outcomes_scale = numpy.std(outcomes)
-        
-        predictors_scale = numpy.std(
-            self._predictors.filter(regex="^(?!.*Intercept)"))
-        predictors_scale[predictors_scale==0] = 1e-20
-        
-        self._fit_data = {
-            "N": self._predictors.shape[0], "K": self._predictors.shape[1],
-            "y": outcomes, "X": self._predictors.values,
+        if isinstance(formula, str):
+            self._outcomes, self._predictors = [
+                pandas.DataFrame(a) for a in formulaic.model_matrix(formula, data)]
+            self._predictor_mapper = PredictorMapper(self._predictors)
             
-            "mu_alpha": outcomes_mean, "sigma_alpha": outcomes_scale,
-            "sigma_beta": (outcomes_scale/predictors_scale),
-            "lambda_sigma": 1/outcomes_scale
-        }
+            mu_y = float(self._outcomes.mean())
+            sigma_y = float(self._outcomes.std())
+            
+            sigma_X = self._predictors.filter(regex="^(?!.*Intercept)").std()
+            sigma_X[sigma_X==0] = 1e-20
+            
+            self._fit_data = {
+                "N": len(data), "K": self._predictors.shape[1],
+                "y": self._outcomes.iloc[:,0], "X": self._predictors.values,
+                
+                "mu_alpha": mu_y, "sigma_alpha": 2.5*sigma_y,
+                "sigma_beta": 2.5*(sigma_y/sigma_X),
+                "lambda_sigma": 1/sigma_y
+            }
+        else:
+            self._outcomes, self._predictors = zip(
+                *[formulaic.model_matrix(f, data) for f in formula])
+            self._outcomes = pandas.concat(self._outcomes, axis="columns")
+            
+            self._predictor_mapper = PredictorMapper(
+                self._predictors, self._outcomes)
+            
+            mu_y = self._outcomes.mean()
+            sigma_y = self._outcomes.std()
+            sigma_X = [
+                x.filter(regex="^(?!.*Intercept)").std()
+                for x in self._predictors]
+            
+            self._fit_data = {
+                "R": len(formula), "N": len(data), "K": [
+                    x.shape[1] for x in self._predictors],
+                
+                "y": self._outcomes, "X": numpy.concatenate(
+                    [numpy.ravel(x) for x in self._predictors]),
+                
+                "mu_alpha": mu_y, "sigma_alpha": 2.5*sigma_y,
+                "sigma_beta": numpy.concatenate(
+                    [2.5*(sy/sx) for sx, sy in zip(sigma_X, sigma_y)]),
+                "lambda_sigma": 1/sigma_y,
+                "eta_L": 1.0
+            }
     
     def _update_programs(self, chains=None):
+        if isinstance(self.formula, str):
+            kind = "univariate"
+        else:
+            kind = "multivariate"
+        
+        names = [
+            "sampler", "predict_prior", "predict_posterior", "log_likelihood"]
+        files = [
+            os.path.join(os.path.dirname(__file__), f"{kind}_{x}")
+            for x in names]
         self._programs = {
-            x: cmdstanpy.CmdStanModel(
-                exe_file=os.path.join(
-                    os.path.dirname(__file__), f"univariate_{x}"))
-            for x in [
-                "sampler", "predict_prior", "predict_posterior",
-                "log_likelihood"]
-        }
+            n: cmdstanpy.CmdStanModel(exe_file=x)
+            for n, x in zip(names, files) if os.path.isfile(x) }
         
         if chains is not None:
             directory = pathlib.Path(tempfile.mkdtemp())
