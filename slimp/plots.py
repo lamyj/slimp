@@ -1,6 +1,7 @@
 import matplotlib.pyplot
 import numpy
 import seaborn
+import scipy.stats
 
 def parameters_plot(model, include=None, exclude=None, **kwargs):
     if include is None:
@@ -38,3 +39,35 @@ def predictive_plot(
         model.outcomes.values.squeeze(), color="k", alpha=1, **plot_kwargs)
     plot_kwargs.get("ax", matplotlib.pyplot.gca()).set(
         xlabel=model.outcomes.columns[0])
+
+class KDEPlot:
+    def __init__(
+            self, data, ax=None, prob=None, point_estimate=None, color="black",
+            alpha=0.3, **kwargs):
+        
+        self.ax = ax or matplotlib.pyplot.gca()
+        
+        linewidth = kwargs.pop("lw", kwargs.pop("linewidth", None))
+        
+        self.kde = scipy.stats.gaussian_kde(data)
+        bw = self.kde.scotts_factor() * data.std(ddof=1)
+        
+        xs = numpy.linspace(data.min()-bw, data.max()+bw, 200)
+        self.dist_line = self.ax.plot(
+            xs, self.kde(xs), color=color, linewidth=linewidth)
+        
+        self.dist_area = None
+        if prob is not None:
+            self.q = numpy.quantile(data, [0.5-prob/2, 0.5+prob/2])
+            xs = xs[(xs>=self.q[0]) & (xs<=self.q[1])]
+            self.dist_area = self.ax.fill_between(
+                xs, self.kde(xs), color=color, alpha=alpha, lw=0)
+        
+        self.estimate_line = None
+        if point_estimate is not None:
+            x = point_estimate(data)
+            self.estimate_line = self.ax.plot(
+                [x, x], [0, *self.kde(x)], color=color, linewidth=linewidth)
+        
+        self.ax.set(ylim=0, yticks=[])
+        self.ax.spines[["top", "left", "right"]].set_visible(False)
