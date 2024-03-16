@@ -1,6 +1,4 @@
-// TODO:
-
-#include univariate_functions.stan
+#include functions.stan
 
 data
 {

@@ -12,7 +12,7 @@ i-th predictors value, we then have:
 σ ~ Exp(λ_σ)
 */
 
-#include univariate_functions.stan
+#include functions.stan
 
 data
 {
