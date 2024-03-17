@@ -19,7 +19,7 @@ data
     // Outcomes
     array[N] vector[R] y;
     // Predictors
-    vector[N*sum(K)] X;
+    matrix[N, sum(K)] X;
     
     // Location and scale of the intercept priors
     vector[R] mu_alpha, sigma_alpha;
@@ -39,17 +39,36 @@ transformed data
     // Numbers of predictors after centering
     array[R] int K_c = to_int(to_array_1d(to_vector(K) - 1));
     
-    // Center the predictors
-    vector[sum(K_c)] X_bar;
-    vector[N*sum(K_c)] X_c;
+    // Indices of the first and last columns of the predictors for the sub-model
+    // in X and X_c
+    array[R] int K_begin, K_end, K_c_begin, K_c_end;
     for(r in 1:R)
     {
-        matrix[N, K[r]] X_ = get_matrix(X, N, K, r);
+        if(r == 1)
+        {
+            K_begin[r] = 1;
+            K_c_begin[r] = 1;
+        }
+        else
+        {
+            K_begin[r] = K_begin[r-1] + K[r-1];
+            K_c_begin[r] = K_c_begin[r-1] + K_c[r-1];
+        }
+        K_end[r] = K_begin[r] + K[r] - 1;
+        K_c_end[r] = K_c_begin[r] + K_c[r] - 1;
+    }
+    
+    // Center the predictors
+    vector[sum(K_c)] X_bar;
+    matrix[N, sum(K_c)] X_c;
+    for(r in 1:R)
+    {
+        matrix[N, K[r]] X_ = X[, K_begin[r]:K_end[r]];
         vector[K_c[r]] X_bar_ = center_columns(X_, N, K[r]);
         matrix[N, K_c[r]] X_c_ = center(X_, X_bar_, N, K[r]);
         
-        X_bar = update_vector(X_bar, K_c, r, X_bar_);
-        X_c = update_matrix(X_c, N, K_c, r, X_c_);
+        X_bar[K_c_begin[r]:K_c_end[r]] = X_bar_;
+        X_c[, K_c_begin[r]:K_c_end[r]] = X_c_;
     }
 }
  
@@ -70,8 +89,8 @@ model
     array[N] vector[R] mu;
     for(r in 1:R)
     {
-        matrix[N, K_c[r]] X_c_ = get_matrix(X_c, N, K_c, r);
-        vector[K_c[r]] beta_ = get_vector(beta, K_c, r);
+        matrix[N, K_c[r]] X_c_ = X_c[, K_c_begin[r]:K_c_end[r]];
+        vector[K_c[r]] beta_ = beta[K_c_begin[r]:K_c_end[r]];
         
         for(n in 1:N)
         {
@@ -88,8 +107,8 @@ generated quantities
     vector[R] alpha;
     for(r in 1:R)
     {
-        vector[K_c[r]] X_bar_ = get_vector(X_bar, K_c, r);
-        vector[K_c[r]] beta_ = get_vector(beta, K_c, r);
+        vector[K_c[r]] X_bar_ = X_bar[K_c_begin[r]:K_c_end[r]];
+        vector[K_c[r]] beta_ = beta[K_c_begin[r]:K_c_end[r]];
         alpha[r] = alpha_c[r] - dot_product(X_bar_, beta_);
     }
     

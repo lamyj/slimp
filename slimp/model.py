@@ -181,8 +181,8 @@ class Model:
                 "R": len(formula), "N": len(data), "K": [
                     x.shape[1] for x in self._predictors],
                 
-                "y": self._outcomes, "X": numpy.concatenate(
-                    [numpy.ravel(x) for x in self._predictors]),
+                "y": self._outcomes, "X": pandas.concat(
+                    self._predictors, axis="columns"),
                 
                 "mu_alpha": mu_y, "sigma_alpha": 2.5*sigma_y,
                 "sigma_beta": numpy.concatenate(
