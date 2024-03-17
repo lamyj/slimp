@@ -24,13 +24,17 @@ class BuildStanModels(setuptools.Command, setuptools.command.build.SubCommand):
         pass
         
     def finalize_options(self):
-        self.sources = [
-            x for x in glob.glob("slimp/*.stan")
-            if not x.endswith("_functions.stan")
-                and not x.endswith("_parameters.stan")]
+        self.sources = []
+        for program in [
+                "sampler", "log_likelihood",
+                "predict_prior", "predict_posterior"]:
+            self.sources.extend([
+                x for x in glob.glob(f"slimp/*_{program}.stan")
+                if os.path.isfile(x)])
         self.stanc_options = shlex.split(
             os.environ.get("SLIMP_STANC_OPTIONS", ""))
-        for option in ["STAN_CPP_OPTIMS", "STAN_THREADS", "STAN_NO_RANGE_CHECKS"]:
+        for option in [
+                "STAN_CPP_OPTIMS", "STAN_THREADS", "STAN_NO_RANGE_CHECKS"]:
             if not any(x.startswith(f"{option}=") for x in self.stanc_options):
                 self.stanc_options.append(f"{option}=TRUE")
         
