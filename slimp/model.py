@@ -150,9 +150,11 @@ class Model:
             self._predictor_mapper = PredictorMapper(self._predictors)
             
             mu_y = float(self._outcomes.mean())
-            sigma_y = float(self._outcomes.std())
+            sigma_y = float(self._outcomes.std(ddof=0))
             
-            sigma_X = self._predictors.filter(regex="^(?!.*Intercept)").std()
+            sigma_X = (
+                self._predictors.filter(regex="^(?!.*Intercept)")
+                .std(ddof=0))
             sigma_X[sigma_X==0] = 1e-20
             
             self._fit_data = {
@@ -172,9 +174,9 @@ class Model:
                 self._predictors, self._outcomes)
             
             mu_y = self._outcomes.mean()
-            sigma_y = self._outcomes.std()
+            sigma_y = self._outcomes.std(ddof=0)
             sigma_X = [
-                x.filter(regex="^(?!.*Intercept)").std()
+                x.filter(regex="^(?!.*Intercept)").std(ddof=0)
                 for x in self._predictors]
             
             self._fit_data = {
