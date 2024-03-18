@@ -11,9 +11,9 @@ import pandas
 from .predictor_mapper import PredictorMapper   
 
 class Model:
-    def __init__(self, formula, data):
+    def __init__(self, formula, data, seed=None):
         self._update_model_data(formula, data)
-        self._update_programs()
+        self._update_programs(seed)
         self._update_draws()
         self._update_generated_quantities()
     
@@ -53,7 +53,7 @@ class Model:
             fit = self._programs["predict_prior"].generate_quantities(
                 self._fit_data | {
                     "N_new": self._fit_data["N"], "X_new": self._fit_data["X"]},
-                self._fit)
+                self._fit, seed=self.seed, sig_figs=18)
             draws = fit.draws_pd()
             self._y_prior = draws.filter(like="y")
         return self._y_prior
@@ -64,7 +64,7 @@ class Model:
             fit = self._programs["predict_posterior"].generate_quantities(
                 self._fit_data | {
                     "N_new": self._fit_data["N"], "X_new": self._fit_data["X"]},
-                self._fit)
+                self._fit, seed=self.seed, sig_figs=18)
             draws = fit.draws_pd()
             self._mu_posterior = draws.filter(like="mu")
             self._y_posterior = draws.filter(like="y")
@@ -76,7 +76,7 @@ class Model:
             fit = self._programs["predict_posterior"].generate_quantities(
                 self._fit_data | {
                     "N_new": self._fit_data["N"], "X_new": self._fit_data["X"]},
-                self._fit)
+                self._fit, seed=self.seed, sig_figs=18)
             draws = fit.draws_pd()
             self._mu_posterior = draws.filter(like="mu")
             self._y_posterior = draws.filter(like="y")
@@ -86,7 +86,7 @@ class Model:
     def log_likelihood(self):
         if self._log_likelihood is None:
             fit = self._programs["log_likelihood"].generate_quantities(
-                self._fit_data, self._fit)
+                self._fit_data, self._fit, seed=self.seed, sig_figs=18)
             self._log_likelihood = fit.draws_pd().filter(like="log_likelihood")
         return self._log_likelihood
     
@@ -113,7 +113,8 @@ class Model:
         kwargs["output_dir"] = directory
         kwargs["sig_figs"] = 18
         
-        self._fit = self._programs["sampler"].sample(self._fit_data, **kwargs)
+        self._fit = self._programs["sampler"].sample(
+            self._fit_data, seed=self.seed, **kwargs)
         self._update_draws()
         
         self._log_likelihood = None
@@ -126,7 +127,7 @@ class Model:
         summary.index = self._predictor_mapper(summary.index)
         return summary
     
-    def predict(self, data, **kwargs):
+    def predict(self, data, seed):
         data = data.astype(
             {k: v for k, v in self._data.dtypes.items() if k in data.columns})
         predictors = pandas.DataFrame(
@@ -135,7 +136,7 @@ class Model:
             "N_new": predictors.shape[0], "X_new": predictors.values.tolist()}
         
         fit = self._programs["predict_posterior"].generate_quantities(
-            fit_data, self._fit, **kwargs)
+            fit_data, self._fit, seed=seed, sig_figs=18)
         draws = fit.draws_pd()
         
         return draws.filter(like="mu"), draws.filter(like="y")
@@ -193,7 +194,7 @@ class Model:
                 "eta_L": 1.0
             }
     
-    def _update_programs(self, chains=None):
+    def _update_programs(self, seed=None, chains=None):
         if isinstance(self.formula, str):
             kind = "univariate"
         else:
@@ -207,6 +208,8 @@ class Model:
         self._programs = {
             n: cmdstanpy.CmdStanModel(exe_file=x)
             for n, x in zip(names, files) if os.path.isfile(x) }
+        
+        self.seed = seed
         
         if chains is not None:
             directory = pathlib.Path(tempfile.mkdtemp())
@@ -251,17 +254,16 @@ class Model:
                     with open(chain) as fd:
                         chains[chain.name] = fd.read()
         
-        members = [
-            "log_likelihood", "y_prior", "mu_posterior", "y_posterior"]
+        members = ["log_likelihood", "y_prior", "mu_posterior", "y_posterior"]
         return {
             "formula": self._formula, "data": self._data,
-            **({"chains": chains} if chains else {}),
+            "seed": self.seed, **({"chains": chains} if chains else {}),
             **{member: getattr(self, f"_{member}") for member in members}
         }
     
     def __setstate__(self, state):
         self._update_model_data(state["formula"], state["data"])
-        self._update_programs(state.get("chains"))
+        self._update_programs(state.get("seed"), state.get("chains"))
         self._update_draws()
         self._update_generated_quantities(state)
 
