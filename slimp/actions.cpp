@@ -61,7 +61,18 @@ std::tuple<ArrayWriter::Array, std::vector<std::string>> sample(
             params.save_warmup
             ?(params.num_warmup+params.num_samples)
             :params.num_samples),
-        hmc_names.size() + model_parameters.size()});
+        2 + hmc_names.size() + model_parameters.size()});
+    {
+        auto && accessor = sample_array.mutable_unchecked();
+        for(size_t chain=0; chain!=sample_array.shape(0); ++chain)
+        {
+            for(size_t sample=0; sample!=sample_array.shape(1); ++sample)
+            {
+                *accessor.mutable_data(chain, sample, 0UL) = 1+chain;
+                *accessor.mutable_data(chain, sample, 1UL) = sample;
+            }
+        }
+    }
     // ArrayWriter::Array diagnostic_array({
     //     params.num_chains, size_t(params.num_warmup+params.num_samples), 
     //     hmc_names.size() + 3*model.num_params_r()});
@@ -71,7 +82,7 @@ std::tuple<ArrayWriter::Array, std::vector<std::string>> sample(
     {
         init_contexts.push_back(
             std::make_shared<stan::io::empty_var_context>());
-        sample_writers.emplace_back(sample_array, i);
+        sample_writers.emplace_back(sample_array, i, 2);
         // diagnostic_writers.emplace_back(diagnostic_array, i);
     }
     
@@ -89,7 +100,9 @@ std::tuple<ArrayWriter::Array, std::vector<std::string>> sample(
             "Error while sampling: "+std::to_string(return_code));
     }
     
-    return std::make_tuple(sample_array, sample_writers[0].names());
+    auto names = sample_writers[0].names();
+    names.insert(names.begin(), {"chain__", "draw__"});
+    return std::make_tuple(sample_array, names);
 }
 
 std::tuple<ArrayWriter::Array, std::vector<std::string>> generate_quantities(
@@ -101,10 +114,10 @@ std::tuple<ArrayWriter::Array, std::vector<std::string>> generate_quantities(
     params.seed = 42;
     params.num_chains = 4;
     
-    auto var_context = std::make_shared<VarContext>(data);
+    VarContext var_context(data);
     
     auto & model = Factory::instance().get(
-        name+"_"+variant, *var_context, params.seed, &std::cout);
+        name+"_"+variant, var_context, params.seed, &std::cout);
     
     stan::callbacks::interrupt interrupt;
     // FIXME: return this
@@ -121,7 +134,18 @@ std::tuple<ArrayWriter::Array, std::vector<std::string>> generate_quantities(
     model.constrained_param_names(generated_quantities, false, true);
     auto const columns = generated_quantities.size() - parameters.size();
     
-    ArrayWriter::Array array({params.num_chains, num_draws, columns});
+    ArrayWriter::Array array({params.num_chains, num_draws, 2+columns});
+    {
+        auto && accessor = array.mutable_unchecked();
+        for(size_t chain=0; chain!=array.shape(0); ++chain)
+        {
+            for(size_t sample=0; sample!=array.shape(1); ++sample)
+            {
+                *accessor.mutable_data(chain, sample, 0UL) = 1+chain;
+                *accessor.mutable_data(chain, sample, 1UL) = sample;
+            }
+        }
+    }
         
     // FIXME: are the draws copied in draws_array?
     std::vector<Eigen::MatrixXd> draws_array;
@@ -129,7 +153,7 @@ std::tuple<ArrayWriter::Array, std::vector<std::string>> generate_quantities(
     for(size_t i=0; i!=params.num_chains; ++i)
     {
         draws_array.push_back(draws.block(i*num_draws, 0, num_draws, draws.cols()));
-        writers.emplace_back(array, i, parameters.size());
+        writers.emplace_back(array, i, 2, parameters.size());
     }
     
     auto const return_code = stan::services::standalone_generate(
@@ -141,5 +165,7 @@ std::tuple<ArrayWriter::Array, std::vector<std::string>> generate_quantities(
             "Error while sampling: "+std::to_string(return_code));
     }
     
-    return std::make_tuple(array, writers[0].names());
+    auto names = writers[0].names();
+    names.insert(names.begin(), {"chain__", "draw__"});
+    return std::make_tuple(array, names);
 }

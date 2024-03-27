@@ -30,10 +30,11 @@ public:
      * @brief Create a writer to given array.
      * @param array destination array
      * @param chain 0-based index of chain this writer uses
+     * @param offset offset in the destination array for the start of the write
      * @param skip number of parameters at the head of written data which are
      *             skipped (used e.g. for generated quantities)
      */
-    ArrayWriter(Array & array, size_t chain, size_t skip=0);
+    ArrayWriter(Array & array, size_t chain, size_t offset=0, size_t skip=0);
     
     /// @addtogroup writer_Interface Interface of std::callbacks::writer
     /// @{
@@ -47,7 +48,7 @@ public:
     
 private:
     Array & _array;
-    size_t _chain, _skip, _draw;
+    size_t _chain, _offset, _skip, _draw;
     std::vector<std::string> _names;
     std::map<size_t, std::vector<std::string>> _messages;
 };
