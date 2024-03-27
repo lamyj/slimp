@@ -11,6 +11,7 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
+#include "action_parameters.h"
 #include "ArrayWriter.h"
 
 /**
@@ -18,10 +19,12 @@
  * @param name Base name of the model, this function will sample from
  *             <name>_sampler
  * @param data Dictionary of data passed to the sampler
+ * @param parameters Sampling parameters
  * @return Array of samples and names of columns
  */
 std::tuple<ArrayWriter::Array, std::vector<std::string>> sample(
-    std::string const & name, pybind11::dict data);
+    std::string const & name, pybind11::dict data,
+    action_parameters::Sample const & parameters);
 
 /**
  * @brief Generate quantities from a model.
@@ -31,10 +34,12 @@ std::tuple<ArrayWriter::Array, std::vector<std::string>> sample(
  *                generate data from <name>_<variant>
  * @param data Dictionary of data
  * @param draws Array of draws from sampling
+ * @param parameters Generation parameters
  * @return Array of generated quantities and names of columns
  */
 std::tuple<ArrayWriter::Array, std::vector<std::string>> generate_quantities(
     std::string const & name, std::string const & variant,
-    pybind11::dict data, Eigen::Ref<Eigen::MatrixXd> draws);
+    pybind11::dict data, Eigen::Ref<Eigen::MatrixXd> draws,
+    action_parameters::GenerateQuantities const & parameters);
 
 #endif // _9ef486bc_b1a6_4872_b2a2_52eb0aea794c
