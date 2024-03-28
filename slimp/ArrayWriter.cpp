@@ -36,10 +36,16 @@ ArrayWriter
             + " got " + std::to_string(state.size()));
     }
     
-    std::copy(
-        state.begin()+this->_skip, state.end(),
-        this->_array.mutable_unchecked().mutable_data(
-            this->_chain, this->_draw, this->_offset));
+    auto source = state.begin()+this->_skip;
+    auto destination = this->_array.mutable_unchecked().mutable_data(
+        this->_chain, this->_draw, this->_offset);
+    auto const stride = this->_array.strides()[2]/this->_array.itemsize();
+    while(source != state.end())
+    {
+        *destination = *source;
+        ++source;
+        destination += stride;
+    }
     ++this->_draw;
 }
 
@@ -62,15 +68,20 @@ ArrayWriter
             + " got " + std::to_string(values.rows()-this->_skip));
     }
     
+    auto source = values(this->_skip, 0);
+    auto destination = this->_array.mutable_unchecked().mutable_data(
+        this->_chain, this->_draw, this->_offset);
+    auto const stride = this->_array.strides()[2]/this->_array.itemsize();
     for(size_t j=0; j!=values.cols(); ++j)
     {
         for(size_t i=this->_skip; i!=values.rows(); ++i)
         {
-            *this->_array.mutable_unchecked().mutable_data(
-                    this->_chain, this->_draw, i+this->_offset-this->_skip
-                ) = values(i, j);
+            *destination = values(i,j);
+            destination += stride;
         }
         ++this->_draw;
+        destination = this->_array.mutable_unchecked().mutable_data(
+            this->_chain, this->_draw, this->_offset);
     }
 }
 

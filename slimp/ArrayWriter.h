@@ -12,13 +12,13 @@
 /**
  * @brief Stan writer to a user-provided numpy array.
  *
- * The array must be a C-style, 3D array of doubles with shape chains × draws ×
+ * The array must be a F-style, 3D array of doubles with shape chains × draws ×
  * parameters.
  */
 class ArrayWriter: public stan::callbacks::writer
 {
 public:
-    using Array = pybind11::array_t<double, pybind11::array::c_style>;
+    using Array = pybind11::array_t<double, pybind11::array::f_style>;
     
     ArrayWriter() = delete;
     ArrayWriter(ArrayWriter const &) = delete;
