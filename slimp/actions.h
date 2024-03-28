@@ -20,9 +20,12 @@
  *             <name>_sampler
  * @param data Dictionary of data passed to the sampler
  * @param parameters Sampling parameters
- * @return Array of samples and names of columns
+ * @return A dictionary containing the array of samples ("array"), the names of
+ *         columns in the array ("columns") and the name of the model parameters
+ *         (excluding transformed parameters and derived quantities,
+ *         "parameters_columns")
  */
-std::tuple<ArrayWriter::Array, std::vector<std::string>> sample(
+pybind11::dict sample(
     std::string const & name, pybind11::dict data,
     action_parameters::Sample const & parameters);
 
@@ -35,9 +38,10 @@ std::tuple<ArrayWriter::Array, std::vector<std::string>> sample(
  * @param data Dictionary of data
  * @param draws Array of draws from sampling
  * @param parameters Generation parameters
- * @return Array of generated quantities and names of columns
+ * @return A dictionary containing the array of samples ("array") and the names
+ *         of columns in the array ("columns") 
  */
-std::tuple<ArrayWriter::Array, std::vector<std::string>> generate_quantities(
+pybind11::dict generate_quantities(
     std::string const & name, std::string const & variant,
     pybind11::dict data, Eigen::Ref<Eigen::MatrixXd> draws,
     action_parameters::GenerateQuantities const & parameters);

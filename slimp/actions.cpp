@@ -11,6 +11,7 @@
 #include <vector>
 
 #include <pybind11/pybind11.h>
+#include <pybind11/stl.h>
 #include <stan/callbacks/interrupt.hpp>
 #include <stan/callbacks/stream_logger.hpp>
 #include <stan/io/empty_var_context.hpp>
@@ -22,7 +23,7 @@
 #include "Factory.h"
 #include "VarContext.h"
 
-std::tuple<ArrayWriter::Array, std::vector<std::string>> sample(
+pybind11::dict sample(
     std::string const & name, pybind11::dict data,
     action_parameters::Sample const & parameters)
 {
@@ -101,10 +102,19 @@ std::tuple<ArrayWriter::Array, std::vector<std::string>> sample(
     
     auto names = sample_writers[0].names();
     names.insert(names.begin(), {"chain__", "draw__"});
-    return std::make_tuple(sample_array, names);
+    
+    std::vector<std::string> parameters_names;
+    model.constrained_param_names(parameters_names, false, false);
+    
+    pybind11::dict result;
+    result["array"] = sample_array;
+    result["columns"] = names;
+    result["parameters_columns"] = parameters_names;
+    
+    return result;
 }
 
-std::tuple<ArrayWriter::Array, std::vector<std::string>> generate_quantities(
+pybind11::dict generate_quantities(
     std::string const & name, std::string const & variant,
     pybind11::dict data, Eigen::Ref<Eigen::MatrixXd> draws,
     action_parameters::GenerateQuantities const & parameters)
@@ -162,5 +172,9 @@ std::tuple<ArrayWriter::Array, std::vector<std::string>> generate_quantities(
     
     auto names = writers[0].names();
     names.insert(names.begin(), {"chain__", "draw__"});
-    return std::make_tuple(array, names);
+    pybind11::dict result;
+    result["array"] = array;
+    result["columns"] = names;
+    
+    return result;
 }
