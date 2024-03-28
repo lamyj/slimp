@@ -46,4 +46,22 @@ pybind11::dict generate_quantities(
     pybind11::dict data, Eigen::Ref<Eigen::MatrixXd> draws,
     action_parameters::GenerateQuantities const & parameters);
 
+/**
+ * @brief Compute the effective sample size for each column of the draws
+ * @param draws each column hold the draws of a variable, and is concatenation
+ *              of all chains
+ * @param num_chains number of chains
+ */
+Eigen::VectorXd get_effective_sample_size(
+    Eigen::Ref<Eigen::MatrixXd> draws, size_t num_chains);
+
+/**
+ * @brief Compute the potential scale reduction (Rhat) for each column of the draws
+ * @param draws each column hold the draws of a variable, and is concatenation
+ *              of all chains
+ * @param num_chains number of chains
+ */
+Eigen::VectorXd get_potential_scale_reduction(
+    Eigen::Ref<Eigen::MatrixXd> draws, size_t num_chains);
+
 #endif // _9ef486bc_b1a6_4872_b2a2_52eb0aea794c

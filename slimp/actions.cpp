@@ -15,6 +15,8 @@
 #include <stan/callbacks/interrupt.hpp>
 #include <stan/callbacks/stream_logger.hpp>
 #include <stan/io/empty_var_context.hpp>
+#include <stan/analyze/mcmc/compute_effective_sample_size.hpp>
+#include <stan/analyze/mcmc/compute_potential_scale_reduction.hpp>
 #include <stan/services/sample/hmc_nuts_diag_e_adapt.hpp>
 #include <stan/services/sample/standalone_gqs.hpp>
 
@@ -39,7 +41,8 @@ pybind11::dict sample(
     std::vector<std::string> hmc_names;
     stan::mcmc::sample::get_sample_param_names(hmc_names);
     auto rng = stan::services::util::create_rng(0, 1);
-    stan::mcmc::adapt_diag_e_nuts<decltype(model), decltype(rng)> sampler(model, rng);
+    stan::mcmc::adapt_diag_e_nuts<decltype(model), decltype(rng)> sampler(
+        model, rng);
     sampler.get_sampler_param_names(hmc_names);
     auto const hmc_fixed_cols = hmc_names.size();
     
@@ -157,7 +160,8 @@ pybind11::dict generate_quantities(
     std::vector<ArrayWriter> writers;
     for(size_t i=0; i!=parameters.num_chains; ++i)
     {
-        draws_array.push_back(draws.block(i*num_draws, 0, num_draws, draws.cols()));
+        draws_array.push_back(
+            draws.block(i*num_draws, 0, num_draws, draws.cols()));
         writers.emplace_back(array, i, 2, model_names.size());
     }
     
@@ -177,4 +181,48 @@ pybind11::dict generate_quantities(
     result["columns"] = names;
     
     return result;
+}
+
+Eigen::VectorXd get_effective_sample_size(
+    Eigen::Ref<Eigen::MatrixXd> draws, size_t num_chains)
+{
+    Eigen::VectorXd sample_size(draws.cols());
+    
+    auto const draws_per_chain = draws.rows()/num_chains;
+    for(size_t column=0; column!=draws.cols(); ++column)
+    {
+        auto const vector = draws.col(column);
+        
+        std::vector<double const *> chains(num_chains);
+        for(size_t chain=0; chain!=num_chains; ++chain)
+        {
+            chains[chain] = vector.data()+draws_per_chain*chain;
+        }
+        sample_size[column] = stan::analyze::compute_effective_sample_size(
+            chains, draws_per_chain);
+    }
+    
+    return sample_size;
+}
+
+Eigen::VectorXd get_potential_scale_reduction(
+    Eigen::Ref<Eigen::MatrixXd> draws, size_t num_chains)
+{
+    Eigen::VectorXd sample_size(draws.cols());
+    
+    auto const draws_per_chain = draws.rows()/num_chains;
+    for(size_t column=0; column!=draws.cols(); ++column)
+    {
+        auto const vector = draws.col(column);
+        
+        std::vector<double const *> chains(num_chains);
+        for(size_t chain=0; chain!=num_chains; ++chain)
+        {
+            chains[chain] = vector.data()+draws_per_chain*chain;
+        }
+        sample_size[column] = stan::analyze::compute_potential_scale_reduction(
+            chains, draws_per_chain);
+    }
+    
+    return sample_size;
 }

@@ -69,4 +69,6 @@ PYBIND11_MODULE(_slimp, module)
     
     module.def("generate_quantities", &generate_quantities);
     module.def("sample", &sample);
+    module.def("get_effective_sample_size", &get_effective_sample_size);
+    module.def("get_potential_scale_reduction", &get_potential_scale_reduction);
 }
