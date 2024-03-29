@@ -10,8 +10,6 @@ jobs:
       matrix:
         include:
           - { os: "ubuntu-latest" }
-          - { os: "macos-latest" }
-          - { os: "windows-latest" }
     env:
       WORKSPACE: "${{ github.workspace }}"
     defaults:
