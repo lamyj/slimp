@@ -39,3 +39,8 @@ jobs:
       - name: Set-up
         run: python .ci/build/conda.py ${{ env.MAMBA_EXE }}
       
+      - name: Set CmdStan environment
+        run: echo "CMDSTAN=${CONDA_PREFIX}/bin/cmdstan" >> ${GITHUB_ENV}
+      
+      - name: Build
+        run: python .ci/build/build.py
