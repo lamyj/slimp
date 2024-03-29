@@ -1,0 +1,41 @@
+name: Build slimp
+on: push
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    name: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: "ubuntu-latest" }
+          - { os: "macos-latest" }
+          - { os: "windows-latest" }
+    env:
+      WORKSPACE: "${{ github.workspace }}"
+    defaults:
+      run:
+        shell: ${{ contains(matrix.os, 'windows') && 'pwsh' || 'bash -l {0}' }}
+    steps:
+      - name: Setup Micromamba
+        uses: mamba-org/setup-micromamba@v1
+        with:
+          init-shell: bash powershell
+          environment-name: slimp
+          create-args: python=3.11
+      
+      - name: Checkout latest revision
+        # Only the latest revision is required, as later steps do not depend on
+        # tags.
+        run: |
+          git config --global init.defaultBranch master
+          git config --global --add safe.directory '*'
+          git init .
+          git remote add origin ${{ github.server_url }}/${{ github.repository }}
+          git fetch origin --depth=1 ${{ github.ref }}
+          git checkout ${{ github.ref_name }}
+      
+      - name: Set-up
+        run: python .ci/build/conda.py ${{ env.MAMBA_EXE }}
+      
