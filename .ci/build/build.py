@@ -17,10 +17,7 @@ subprocess.check_call(
         "cmake", "-G", "Ninja", f"-DPython_EXECUTABLE={sys.executable}",
         "-DCMAKE_BUILD_TYPE=Release", f"-DCMAKE_INSTALL_PREFIX={install_dir}", 
         workspace],
-    cwd=build_dir,
-    env=os.environ|{
-        "STAN": f"{os.environ['CMDSTAN']}/stan/",
-        "STAN_THREADS":"1", "STAN_NO_RANGE_CHECKS":"1", "CXX":"g++"})
+    cwd=build_dir)
 
 subprocess.check_call(
     [

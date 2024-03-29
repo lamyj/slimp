@@ -68,7 +68,6 @@ foreach(stan_file ${stan_files})
 endforeach()
 
 pybind11_add_module(_slimp ${source_files} ${header_files})
-target_compile_definitions(_slimp PUBLIC STAN_THREADS)
 target_compile_options(_slimp PUBLIC "SHELL:${STAN_CXXFLAGS}")
 target_include_directories(_slimp PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
 target_link_options(_slimp PUBLIC "SHELL:${STAN_LDFLAGS}")
