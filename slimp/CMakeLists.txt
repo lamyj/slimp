@@ -11,6 +11,22 @@ execute_process(
     OUTPUT_VARIABLE PYTHON_SITE_PACKAGES
     OUTPUT_STRIP_TRAILING_WHITESPACE)
 
+execute_process(
+    COMMAND
+        make -I "$ENV{CMDSTAN}"
+        -f "${CMAKE_CURRENT_SOURCE_DIR}/stan_info.make" cxxflags
+    OUTPUT_VARIABLE STAN_CXXFLAGS OUTPUT_STRIP_TRAILING_WHITESPACE)
+execute_process(
+    COMMAND
+        make -I "$ENV{CMDSTAN}"
+        -f "${CMAKE_CURRENT_SOURCE_DIR}/stan_info.make" ldflags
+    OUTPUT_VARIABLE STAN_LDFLAGS OUTPUT_STRIP_TRAILING_WHITESPACE)
+    execute_process(
+        COMMAND
+            make -I "$ENV{CMDSTAN}"
+            -f "${CMAKE_CURRENT_SOURCE_DIR}/stan_info.make" libs
+        OUTPUT_VARIABLE STAN_LIBS OUTPUT_STRIP_TRAILING_WHITESPACE)
+
 file(GLOB_RECURSE header_files "*.h")
 file(GLOB_RECURSE source_files "*.cpp")
 file(GLOB_RECURSE python_files "*.py")
@@ -53,20 +69,10 @@ endforeach()
 
 pybind11_add_module(_slimp ${source_files} ${header_files})
 target_compile_definitions(_slimp PUBLIC STAN_THREADS)
-target_compile_options(_slimp PUBLIC -pthread)
-target_include_directories(
-    _slimp PUBLIC
-        ${CMAKE_CURRENT_BINARY_DIR}
-        $ENV{CMDSTAN}/stan/src
-        $ENV{CMDSTAN}/stan/lib/stan_math
-        $ENV{CMDSTAN}/stan/lib/stan_math/lib/sundials_6.1.1/include
-        $ENV{CMDSTAN}/stan/lib/stan_math/lib/tbb_2020.3/include
-)
-target_link_directories(
-    _slimp PUBLIC "$ENV{CMDSTAN}/stan/lib/stan_math/lib/tbb/")
-target_link_options(
-    _slimp PUBLIC "-Wl,-rpath=$ENV{CMDSTAN}/stan/lib/stan_math/lib/tbb")
-target_link_libraries(_slimp PUBLIC Eigen3::Eigen Python::NumPy tbb)
+target_compile_options(_slimp PUBLIC "SHELL:${STAN_CXXFLAGS}")
+target_include_directories(_slimp PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
+target_link_options(_slimp PUBLIC "SHELL:${STAN_LDFLAGS}")
+target_link_libraries(_slimp PUBLIC Eigen3::Eigen Python::NumPy ${STAN_LIBS})
 
 install(DIRECTORY DESTINATION "${PYTHON_SITE_PACKAGES}")
 install(TARGETS _slimp DESTINATION "${PYTHON_SITE_PACKAGES}/slimp")
