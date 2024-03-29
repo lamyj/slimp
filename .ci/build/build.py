@@ -19,6 +19,7 @@ subprocess.check_call(
         workspace],
     cwd=build_dir,
     env=os.environ|{
+        "STAN": f"{os.environ['CMDSTAN']}/stan/",
         "STAN_THREADS":"1", "STAN_NO_RANGE_CHECKS":"1", "CXX":"g++"})
 
 subprocess.check_call(
