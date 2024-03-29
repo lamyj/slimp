@@ -8,6 +8,7 @@
 
 #include <stan/model/model_header.hpp>
 
+/// @brief Register and create models.
 class Factory
 {
 public:

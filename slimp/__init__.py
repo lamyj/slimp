@@ -1,3 +1,4 @@
+from ._slimp import action_parameters
 from .compile import compile
 from .model import Model
 from .plots import KDEPlot, parameters_plot, predictive_plot

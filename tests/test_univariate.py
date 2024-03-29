@@ -41,9 +41,8 @@ class TestUnivariate(unittest.TestCase):
     
     def test_sample(self):
         def dump(path):
-            model = slimp.Model(self.formula, self.data)
-            model.sample(
-                seed=42, chains=4, parallel_chains=4, show_progress=False)
+            model = slimp.Model(self.formula, self.data, seed=42, num_chains=4)
+            model.sample()
             with open(path, "wb") as fd:
                 pickle.dump(model, fd)
         def load(path):
@@ -70,10 +69,17 @@ class TestUnivariate(unittest.TestCase):
             model.hmc_diagnostics.max().values[:2], [0, 0])
         numpy.testing.assert_allclose(
             model.hmc_diagnostics["e_bfmi"].values,
-            [1.10317826, 1.04480104, 1.03752015, 1.07163565])
+            [1.07163565, 1.03752015, 1.04480104, 1.10317826])
         numpy.testing.assert_allclose(
             model.summary()["R_hat"].values,
-            [1.00019542, 1.00118597, 0.99930409, 1.00048186, 1.00000173])
+            [
+                1.00023455, 1.00010931, 1.00056218, 1.00085384, 0.99970619,
+                1.00022703])
+        numpy.testing.assert_allclose(
+            model.summary()["N_Eff"].values,
+            [
+                3536.70781323, 4276.99039814, 3699.20715418, 3480.21091919,
+                3902.67680926, 3684.75594434])
     
     def _test_model_draws(self, model):
         self.assertEqual(

@@ -1,104 +1,92 @@
-import os
-import pathlib
-import shutil
-import tempfile
-
-import cmdstanpy
 import formulaic
 import numpy
 import pandas
 
-from .predictor_mapper import PredictorMapper   
+from . import _slimp, action_parameters
+from .model_data import ModelData
+from .samples import Samples
 
 class Model:
-    def __init__(self, formula, data, seed=None):
-        self._update_model_data(formula, data)
-        self._update_programs(seed)
-        self._update_draws()
-        self._update_generated_quantities()
-    
-    def __del__(self):
-        if getattr(self, "_fit", None) is not None:
-            directory = os.path.dirname(self._fit.runset.csv_files[0])
-            if os.path.isdir(directory):
-                shutil.rmtree(directory)
+    def __init__(self, formula, data, seed=-1, num_chains=1):
+        self._model_data = ModelData(formula, data)
+        
+        self._sampler_parameters = action_parameters.Sample()
+        self._sampler_parameters.seed = seed
+        self._sampler_parameters.num_chains = num_chains
+        
+        self._model_name = (
+            "multivariate" if len(self._model_data.formula)>1
+            else "univariate")
+        
+        self._samples = None
+        self._generated_quantities = {}
     
     @property
     def formula(self):
-        return self._formula
+        return (
+            self._model_data.formula if len(self._model_data.formula)>1
+            else self._model_data.formula[0])
     
     @property
     def data(self):
-        return self._data
+        return self._model_data.data
     
     @property
     def predictors(self):
-        return self._predictors
+        return (
+            self._model_data.predictors if len(self._model_data.formula)>1
+            else self._model_data.predictors[0])
     
     @property
     def outcomes(self):
-        return self._outcomes
+        return self._model_data.outcomes
     
     @property
     def fit_data(self):
-        return self.fit_data
+        return self._model_data.fit_data
     
     @property
     def draws(self):
-        return self._draws
+        return self._samples.draws if self._samples is not None else None
     
     @property
     def prior_predict(self):
-        if self._y_prior is None:
-            fit = self._programs["predict_prior"].generate_quantities(
-                self._fit_data | {
-                    "N_new": self._fit_data["N"], "X_new": self._fit_data["X"]},
-                self._fit, seed=self.seed, sig_figs=18)
-            draws = fit.draws_pd()
-            self._y_prior = draws.filter(like="y")
-        return self._y_prior
+        if "y_prior" not in self._generated_quantities:
+            draws = self._generate_quantities("predict_prior")
+            self._generated_quantities["y_prior"] = draws.filter(like="y")
+        return self._generated_quantities["y_prior"]
     
     @property
     def posterior_epred(self):
-        if self._mu_posterior is None:
-            fit = self._programs["predict_posterior"].generate_quantities(
-                self._fit_data | {
-                    "N_new": self._fit_data["N"], "X_new": self._fit_data["X"]},
-                self._fit, seed=self.seed, sig_figs=18)
-            draws = fit.draws_pd()
-            self._mu_posterior = draws.filter(like="mu")
-            self._y_posterior = draws.filter(like="y")
-        return self._mu_posterior
+        if "mu_posterior" not in self._generated_quantities:
+            draws = self._generate_quantities("predict_posterior")
+            self._generated_quantities["mu_posterior"] = draws.filter(like="mu")
+            self._generated_quantities["y_posterior"] = draws.filter(like="y")
+        return self._generated_quantities["mu_posterior"]
     
     @property
     def posterior_predict(self):
-        if self._y_posterior is None:
-            fit = self._programs["predict_posterior"].generate_quantities(
-                self._fit_data | {
-                    "N_new": self._fit_data["N"], "X_new": self._fit_data["X"]},
-                self._fit, seed=self.seed, sig_figs=18)
-            draws = fit.draws_pd()
-            self._mu_posterior = draws.filter(like="mu")
-            self._y_posterior = draws.filter(like="y")
-        return self._y_posterior
+        if "y_posterior" not in self._generated_quantities:
+            # Update cached data
+            self.posterior_epred
+        return self._generated_quantities["y_posterior"]
     
     @property
     def log_likelihood(self):
-        if self._log_likelihood is None:
-            fit = self._programs["log_likelihood"].generate_quantities(
-                self._fit_data, self._fit, seed=self.seed, sig_figs=18)
-            self._log_likelihood = fit.draws_pd().filter(like="log_likelihood")
-        return self._log_likelihood
+        if "log_likelihood" not in self._generated_quantities:
+            draws = self._generate_quantities("log_likelihood")
+            self._generated_quantities["log_likelihood"] = draws.filter(like="log_likelihood")
+        return self._generated_quantities["log_likelihood"]
     
     @property
     def hmc_diagnostics(self):
-        max_depth = self._fit.metadata.cmdstan_config["max_depth"]
         data = (
-            self._diagnostics.groupby("chain__")
+            self._samples.diagnostics.groupby("chain__")
             .agg(
                 divergent=("divergent__", lambda x: numpy.sum(x!=0)),
                 depth_exceeded=(
-                    "treedepth__", lambda x: numpy.sum(x >= max_depth)),
+                    "treedepth__", lambda x: numpy.sum(
+                        x >= self._sampler_parameters.hmc.max_depth)),
                 e_bfmi=(
                     "energy__", 
                     lambda x: (
@@ -107,163 +95,98 @@ class Model:
         data.index = data.index.rename("chain").astype(int)
         return data
     
-    def sample(self, **kwargs):
-        # NOTE: this directory must remain during the lifetime of the object
-        directory = tempfile.mkdtemp()
-        kwargs["output_dir"] = directory
-        kwargs["sig_figs"] = 18
-        
-        self._fit = self._programs["sampler"].sample(
-            self._fit_data, seed=self.seed, **kwargs)
-        self._update_draws()
-        
-        self._log_likelihood = None
-        self._mu_posterior = None
-        self._y_posterior = None
+    def sample(self):
+        data = _slimp.sample(
+            self._model_name, self._model_data.fit_data,
+            self._sampler_parameters)
+        self._samples = Samples(
+            self._get_df(data["array"], data["columns"]),
+            self._model_data.predictor_mapper, data["parameters_columns"])
+        self._generated_quantities = {}
     
     def summary(self, percentiles=(5, 50, 95)):
-        summary = self._fit.summary(percentiles, sig_figs=18)
-        summary = summary.iloc[[not x.split("[")[0].endswith("_") for x in summary.index], :]
-        summary.index = self._predictor_mapper(summary.index)
-        return summary
+        lp = self._samples.samples["lp__"].values
+        draws = self._samples.draws.values
+        
+        summary = numpy.empty((1+draws.shape[1], 5+len(percentiles)))
+        
+        measures = [
+            (numpy.mean, 0, ()),
+            (numpy.std, 2, ()),
+            (
+                lambda *args, **kwargs: numpy.quantile(*args, **kwargs).T,
+                slice(3, 3+len(percentiles)), (numpy.array(percentiles)/100, ))]
+        
+        for f, c, args in measures:
+            summary[0, c] = f(lp, *args)
+            summary[1:, c] = f(draws, *args, axis=0)
+        
+        measures = [
+            (_slimp.get_effective_sample_size, -2),
+            (_slimp.get_potential_scale_reduction, -1)]
+        for f, c in measures:
+            summary[0, c] = f(lp, self._sampler_parameters.num_chains)
+            summary[1:, c] = f(draws, self._sampler_parameters.num_chains)
+        
+        summary[:, 1] = numpy.sqrt(summary[:, 2])/numpy.sqrt(summary[:, -2])
+        
+        return pandas.DataFrame(
+            summary,
+            columns=[
+                "Mean", "MCSE", "StdDev",
+                *[f"{p}%" for p in percentiles],
+                "N_Eff", "R_hat"],
+            index=["lp__", *self._samples.draws.columns])
     
-    def predict(self, data, seed):
-        data = data.astype(
-            {k: v for k, v in self._data.dtypes.items() if k in data.columns})
+    def predict(self, data):
+        data = data.astype({
+            k: v for k, v in self.data.dtypes.items() if k in data.columns})
         predictors = pandas.DataFrame(
             formulaic.model_matrix(self.formula.split("~")[1], data))
-        fit_data = self._fit_data | {
-            "N_new": predictors.shape[0], "X_new": predictors.values.tolist()}
-        
-        fit = self._programs["predict_posterior"].generate_quantities(
-            fit_data, self._fit, seed=seed, sig_figs=18)
-        draws = fit.draws_pd()
-        
+        draws = self._generate_quantities(
+            "predict_posterior", predictors.shape[0], predictors.values)
         return draws.filter(like="mu"), draws.filter(like="y")
     
-    def _update_model_data(self, formula, data):
-        self._formula = formula
-        self._data = data
-        
-        if isinstance(formula, str):
-            self._outcomes, self._predictors = [
-                pandas.DataFrame(a) for a in formulaic.model_matrix(formula, data)]
-            self._predictor_mapper = PredictorMapper(self._predictors)
-            
-            mu_y = float(self._outcomes.mean())
-            sigma_y = float(self._outcomes.std(ddof=0))
-            
-            sigma_X = (
-                self._predictors.filter(regex="^(?!.*Intercept)")
-                .std(ddof=0))
-            sigma_X[sigma_X==0] = 1e-20
-            
-            self._fit_data = {
-                "N": len(data), "K": self._predictors.shape[1],
-                "y": self._outcomes.iloc[:,0], "X": self._predictors.values,
-                
-                "mu_alpha": mu_y, "sigma_alpha": 2.5*sigma_y,
-                "sigma_beta": 2.5*(sigma_y/sigma_X),
-                "lambda_sigma": 1/sigma_y
-            }
-        else:
-            self._outcomes, self._predictors = zip(
-                *[formulaic.model_matrix(f, data) for f in formula])
-            self._outcomes = pandas.concat(self._outcomes, axis="columns")
-            
-            self._predictor_mapper = PredictorMapper(
-                self._predictors, self._outcomes)
-            
-            mu_y = self._outcomes.mean()
-            sigma_y = self._outcomes.std(ddof=0)
-            sigma_X = [
-                x.filter(regex="^(?!.*Intercept)").std(ddof=0)
-                for x in self._predictors]
-            
-            self._fit_data = {
-                "R": len(formula), "N": len(data), "K": [
-                    x.shape[1] for x in self._predictors],
-                
-                "y": self._outcomes, "X": pandas.concat(
-                    self._predictors, axis="columns"),
-                
-                "mu_alpha": mu_y, "sigma_alpha": 2.5*sigma_y,
-                "sigma_beta": numpy.concatenate(
-                    [2.5*(sy/sx) for sx, sy in zip(sigma_X, sigma_y)]),
-                "lambda_sigma": 1/sigma_y,
-                "eta_L": 1.0
-            }
+    def _get_df(self, data, names):
+        return pandas.DataFrame(
+            data.reshape(-1, data.shape[-1], order="A"), columns=names)
     
-    def _update_programs(self, seed=None, chains=None):
-        if isinstance(self.formula, str):
-            kind = "univariate"
-        else:
-            kind = "multivariate"
+    def _generate_quantities(self, name, N_new=None, X_new=None):
+        if N_new is None:
+            N_new = self._model_data.fit_data["N"]
+            X_new = self._model_data.fit_data["X"]
         
-        names = [
-            "sampler", "predict_prior", "predict_posterior", "log_likelihood"]
-        files = [
-            os.path.join(os.path.dirname(__file__), f"{kind}_{x}")
-            for x in names]
-        self._programs = {
-            n: cmdstanpy.CmdStanModel(exe_file=x)
-            for n, x in zip(names, files) if os.path.isfile(x) }
+        parameters = action_parameters.GenerateQuantities()
+        parameters.seed = self._sampler_parameters.seed
+        parameters.num_chains = self._sampler_parameters.num_chains
         
-        self.seed = seed
-        
-        if chains is not None:
-            directory = pathlib.Path(tempfile.mkdtemp())
-            paths = []
-            for path, chain in chains.items():
-                with (directory/path).open("w") as fd:
-                    fd.write(chain)
-                paths.append(str(directory/path))
-            self._fit = cmdstanpy.from_csv(paths)
-            self._fit._sig_figs = 18
-        else:
-            self._fit = None
-    
-    def _update_draws(self):
-        self._diagnostics = None
-        self._draws = None
-        if self._fit is not None:
-            self._diagnostics = self._fit.draws_pd().filter(regex="_$")
-            self._draws = self._fit.draws_pd().filter(regex="[^_]$")
-            self._draws.columns = self._predictor_mapper(self._draws.columns)
-    
-    def _update_generated_quantities(self, state=None):
-        self._log_likelihood = None
-        self._y_prior = None
-        self._mu_posterior = None
-        self._y_posterior = None
-        if state is not None:
-            members = [
-                "log_likelihood", "y_prior", "mu_posterior", "y_posterior"]
-            for member in members:
-                setattr(self, f"_{member}", state.get(member))
+        data = _slimp.generate_quantities(
+            self._model_name, name, 
+            self.fit_data | { "N_new": N_new, "X_new": X_new},
+            # NOTE: must only include model parameters
+            self._samples.samples[self._samples.parameters_columns].values,
+            parameters)
+        return self._get_df(data["array"], data["columns"])
     
     def __getstate__(self):
-        chains = None
-        if self._fit is not None:
-            with tempfile.TemporaryDirectory() as directory:
-            # NOTE: need to keep this directory after __getstate__
-                directory = pathlib.Path(tempfile.mkdtemp())
-                self._fit.save_csvfiles(directory)
-                chains = {}
-                for chain in directory.glob("*csv"):
-                    with open(chain) as fd:
-                        chains[chain.name] = fd.read()
-        
-        members = ["log_likelihood", "y_prior", "mu_posterior", "y_posterior"]
         return {
-            "formula": self._formula, "data": self._data,
-            "seed": self.seed, **({"chains": chains} if chains else {}),
-            **{member: getattr(self, f"_{member}") for member in members}
+            "formula": self.formula, "data": self.data,
+            "sampler_parameters": self._sampler_parameters,
+            "model_name": self._model_name,
+            **(
+                {
+                    "samples": self._samples.samples,
+                    "parameters_columns": self._samples.parameters_columns}
+                if self._samples is not None else {}),
+            "generated_quantities": self._generated_quantities
         }
     
     def __setstate__(self, state):
-        self._update_model_data(state["formula"], state["data"])
-        self._update_programs(state.get("seed"), state.get("chains"))
-        self._update_draws()
-        self._update_generated_quantities(state)
-
+        self.__init__(state["formula"], state["data"])
+        self._sampler_parameters = state["sampler_parameters"]
+        self._model_name = state["model_name"]
+        if "samples" in state:
+            self._samples = Samples(
+                state["samples"], self._model_data.predictor_mapper,
+                state["parameters_columns"])
+        self._generated_quantities = state["generated_quantities"]
