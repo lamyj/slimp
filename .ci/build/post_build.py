@@ -14,7 +14,7 @@ python_lib_dir = os.path.join(
     sysconfig.get_path(
         "purelib", {"posix":"posix_prefix", "nt":"nt"}[os.name], {"base": "."}))
 
-python_tests_dir = os.path.join(workspace, "tests", "python")
+python_tests_dir = os.path.join(workspace, "tests")
 
 # C++ tests: only library path is needed
 environment = os.environ.copy()
