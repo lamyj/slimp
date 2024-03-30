@@ -9,27 +9,28 @@
 
 #include "multivariate_log_likelihood.h"
 #include "multivariate_sampler.h"
+#include "multivariate_predict_prior.h"
+
 #include "univariate_log_likelihood.h"
 #include "univariate_predict_posterior.h"
 #include "univariate_predict_prior.h"
 #include "univariate_sampler.h"
 
-#define REGISTER(name) \
-    Factory::instance().register_(#name"_sampler", new_##name##_sampler); \
-    Factory::instance().register_( \
-        #name"_log_likelihood", new_##name##_log_likelihood); \
-    Factory::instance().register_( \
-        #name"_predict_prior", new_##name##_predict_prior); \
-    Factory::instance().register_( \
-        #name"_predict_posterior", new_##name##_predict_posterior);
+#define REGISTER(prefix, suffix) \
+    Factory::instance().register_(#prefix "_" #suffix, new_##prefix##_##suffix);
+
+#define REGISTER_ALL(name) \
+    REGISTER(name, sampler); \
+    REGISTER(name, log_likelihood); \
+    REGISTER(name, predict_prior); \
+    REGISTER(name, predict_posterior);
 
 PYBIND11_MODULE(_slimp, module)
 {
-    REGISTER(univariate);
-    Factory::instance().register_(
-        "multivariate_sampler", new_multivariate_sampler);
-    Factory::instance().register_(
-        "multivariate_log_likelihood", new_multivariate_log_likelihood);
+    REGISTER_ALL(univariate);
+    REGISTER(multivariate, sampler);
+    REGISTER(multivariate, log_likelihood);
+    REGISTER(multivariate, predict_prior);
     
     auto action_parameters_ = module.def_submodule("action_parameters");
     

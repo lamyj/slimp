@@ -62,6 +62,7 @@ class TestMultivariate(unittest.TestCase):
             self._test_model_diagnostics(model)
             self._test_model_draws(model)
             self._test_model_log_likelihood(model)
+            self._test_model_prior_predict(model)
     
     def _test_model_data(self, model):
         self.assertEqual(self.formula, model.formula)
@@ -128,6 +129,18 @@ class TestMultivariate(unittest.TestCase):
                 [-3.8385064,-3.2420162,-3.3174715,-4.3918281,-3.1988372],
                 [-3.6992945,-3.2302977,-3.5341838,-4.726541 ,-3.2277161],
                 [-4.2840764,-3.1872561,-3.5349734,-4.8327181,-3.1293843]])
+    
+    def _test_model_prior_predict(self, model):
+        self.assertEqual(
+            model.prior_predict.shape, (4000, len(self.formula)*len(self.data)))
+        numpy.testing.assert_allclose(
+            model.prior_predict.iloc[:5,:5].values,
+            [
+                [48.6570697,31.823942 ,26.8655552,16.4069899, 6.0898614],
+                [11.4029285,15.2350219,17.5113849,30.8652432,27.1702647],
+                [94.7920922,85.4160147,79.9455973,70.0779007,63.7733472],
+                [65.9746989,62.0146905,42.0816617,35.382645 ,22.5919671],
+                [96.5068115,80.8457643,59.8711939,55.3557259,53.9276823]])
 
 if __name__ == "__main__":
     unittest.main()
