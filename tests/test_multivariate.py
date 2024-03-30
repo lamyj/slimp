@@ -65,6 +65,7 @@ class TestMultivariate(unittest.TestCase):
             self._test_model_prior_predict(model)
             self._test_model_posterior_epred(model)
             self._test_model_posterior_predict(model)
+            self._test_r_squared(model)
     
     def _test_model_data(self, model):
         self.assertEqual(self.formula, model.formula)
@@ -167,6 +168,24 @@ class TestMultivariate(unittest.TestCase):
                 [14.3348934,11.9871694,12.7829482,14.8559529,14.7204133],
                 [11.3787327, 9.5071152,11.4974825,16.4666559,15.9496412],
                 [ 9.8451985,14.0575395,13.5025906,11.1136866,11.873199 ]])
+    
+    def _test_r_squared(self, model):
+        r_squared = slimp.stats.r_squared(model)
+        
+        self.assertEqual(r_squared.shape, (4000, len(self.formula)))
+        numpy.testing.assert_allclose(
+            r_squared.iloc[:10],
+            [
+                [0.9828498,0.9735252],
+                [0.981204 ,0.9766605],
+                [0.9822883,0.9808393],
+                [0.9852849,0.9768808],
+                [0.9844661,0.978359 ],
+                [0.9807788,0.9751221],
+                [0.9842689,0.9735007],
+                [0.9835481,0.9774315],
+                [0.9825075,0.9752729],
+                [0.9833985,0.9804559]])
 
 if __name__ == "__main__":
     unittest.main()
