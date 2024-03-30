@@ -7,6 +7,8 @@ import tempfile
 import setuptools
 import setuptools.command.build
 
+here = os.path.abspath(os.path.dirname(__file__))
+
 class BuildCMake(setuptools.Command, setuptools.command.build.SubCommand):
     def __init__(self, *args, **kwargs):
         setuptools.Command.__init__(self, *args, **kwargs)
@@ -29,7 +31,6 @@ class BuildCMake(setuptools.Command, setuptools.command.build.SubCommand):
         self.set_undefined_options("build_py", ("build_lib", "build_lib"))
     
     def run(self):
-        here = os.path.abspath(os.path.dirname(__file__))
         with tempfile.TemporaryDirectory() as build_dir:
             subprocess.check_call(
                 [
@@ -49,14 +50,36 @@ class BuildCMake(setuptools.Command, setuptools.command.build.SubCommand):
 
 setuptools.command.build.build.sub_commands.append(("build_cmake", None))
 
+long_description = open(os.path.join(here, "README.md")).read()
 setuptools.setup(
     name="slimp",
     version="0.3.0",
     
     description="Linear models with Stan and Pandas",
+    long_description=long_description,
+    long_description_content_type="text/markdown",
+    
+    url="https://github.com/lamyj/slimp",
     
     author="Julien Lamy",
     author_email="lamy@unistra.fr",
+    
+    license="MIT",
+    
+    classifiers=[
+        "Development Status :: 4 - Beta",
+        "Environment :: Console",
+        "Framework :: Matplotlib",
+        "Intended Audience :: Education",
+        "Intended Audience :: Science/Research",
+        "License :: OSI Approved :: MIT License",
+        "Programming Language :: Python :: 3",
+        "Topic :: Scientific/Engineering",
+    ],
+    
+    keywords = [
+        "statistics", "bayesian", "linear-models", "stan", "pandas",
+        "matplotlib"],
     
     cmdclass={"build_cmake": BuildCMake},
 
