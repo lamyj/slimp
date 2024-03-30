@@ -28,7 +28,7 @@ class TestMultivariate(unittest.TestCase):
     
     def test_no_sample(self):
         def dump(path):
-            model = slimp.Model(self.formula, self.data)
+            model = slimp.Model(self.formula, self.data, seed=42, num_chains=4)
             with open(path, "wb") as fd:
                 pickle.dump(model, fd)
         def load(path):
@@ -40,13 +40,13 @@ class TestMultivariate(unittest.TestCase):
             model = load(os.path.join(dir, "model.pkl"))
             
             self._test_model_data(model)
+            self._test_sampler_parameters(model)
             self.assertTrue(model.draws is None)
     
     def test_sample(self):
         def dump(path):
-            model = slimp.Model(self.formula, self.data)
-            model.sample(
-                seed=42, chains=4, parallel_chains=4, show_progress=False)
+            model = slimp.Model(self.formula, self.data, seed=42, num_chains=4)
+            model.sample()
             with open(path, "wb") as fd:
                 pickle.dump(model, fd)
         def load(path):
@@ -58,8 +58,10 @@ class TestMultivariate(unittest.TestCase):
             model = load(os.path.join(dir, "model.pkl"))
             
             self._test_model_data(model)
+            self._test_sampler_parameters(model)
             self._test_model_diagnostics(model)
             self._test_model_draws(model)
+            self._test_model_log_likelihood(model)
     
     def _test_model_data(self, model):
         self.assertEqual(self.formula, model.formula)
@@ -69,21 +71,31 @@ class TestMultivariate(unittest.TestCase):
             self.assertTrue(p1.equals(p2))
         self.assertTrue(self.outcomes.equals(model.outcomes))
     
+    def _test_sampler_parameters(self, model):
+        self.assertEqual(model.sampler_parameters.seed, 42)
+        self.assertEqual(model.sampler_parameters.num_chains, 4)
+        self.assertEqual(model.sampler_parameters.num_samples, 1000)
+    
     def _test_model_diagnostics(self, model):
         numpy.testing.assert_equal(
             model.hmc_diagnostics.max().values[:2], [0, 0])
         numpy.testing.assert_allclose(
             model.hmc_diagnostics["e_bfmi"].values,
-            [0.97782139, 1.11264921, 1.10402065, 1.0453477])
+            [1.09786749, 1.18009938, 1.1609919,  0.99172618])
         numpy.testing.assert_allclose(
             model.summary()["R_hat"].values,
             [
-                0.99931725, 0.99949593,
-                0.9995415, 0.99946114, 0.99977369, 0.99940114,
-                0.99930313, 0.9993098,
-                numpy.nan, numpy.nan, 0.99918394, 0.99930239,
-                0.99957314, 0.99931119,
-                numpy.nan, 0.99918394, 0.99918394, numpy.nan])
+                1.00105561, 0.99960792, 0.99952068, 1.00016764, 0.99968783,
+                0.99960895, 0.99962703, 0.99970713, 0.99971569, numpy.nan,
+                0.99973984, numpy.nan, 0.99956509, 1.00003308, 0.99960281,
+                numpy.nan, 0.99973984, 0.99973984, numpy.nan])
+        numpy.testing.assert_allclose(
+            model.summary()["N_Eff"].values,
+            [
+                3395.494419, 3912.278219, 3999.496209, 3984.778412, 3881.130415,
+                4059.257418, 3760.436512, 3829.355139, 4189.738843, numpy.nan,
+                3753.980293, numpy.nan, 3771.462377, 3882.499809, 4021.782726,
+                numpy.nan, 3753.980293, 3753.980293, numpy.nan])
     
     def _test_model_draws(self, model):
         self.assertEqual(
@@ -92,68 +104,30 @@ class TestMultivariate(unittest.TestCase):
                 "z1/Intercept_c", "z2/Intercept_c",
                 "z1/x", "z1/y", "z2/x", "z2/y",
                 "z1/sigma", "z2/sigma",
-                "L[1,1]", "L[2,1]", "L[1,2]", "L[2,2]",
+                "L.1.1", "L.2.1", "L.1.2", "L.2.2",
                 "z1/Intercept", "z2/Intercept",
-                "Sigma[1,1]", "Sigma[2,1]", "Sigma[1,2]", "Sigma[2,2]"])
+                "Sigma.1.1", "Sigma.2.1", "Sigma.1.2", "Sigma.2.2"])
+        
         numpy.testing.assert_allclose(
-            model.draws.describe().values,
+            model.draws.iloc[:5,:5].values,
             [
-                [
-                    4000.0, 4000.0, 4000.0, 4000.0, 4000.0, 4000.0, 4000.0,
-                    4000.0, 4000.0, 4000.0, 4000.0, 4000.0, 4000.0, 4000.0,
-                    4000.0, 4000.0, 4000.0, 4000.0],
-                [
-                    23.292915664571225, -11.953762954997192, 0.9066306838528909,
-                    2.037453544904818, 5.076821071394089, -7.003248112188733,
-                    1.8424218262277359, 1.9451553204801024, 1.0,
-                    -0.11790820622382898, 0.0, 0.9882361816742625,
-                    10.04453663516153, -3.2848412714212936, 1.0,
-                    -0.11790820622382898, -0.11790820622382898, 1.0],
-                [
-                    0.1829586428967907, 0.19027623926973952, 0.06405571980698378,
-                    0.06364606839453098, 0.06617608264497767, 0.06949940717148995,
-                    0.13522520591355608, 0.14407998016609697, 0.0,
-                    0.09647605543790352, 0.0, 0.013477654885364256,
-                    0.44872863473783103, 0.47217821253191167, 0.0,
-                    0.09647605543790352, 0.09647605543790352,
-                    9.425003409437112e-17],
-                [
-                    22.638380816509276, -12.677938906105357, 0.6848164284919229,
-                    1.825154847157177, 4.8641979452786765, -7.2266722109257495,
-                    1.481715048943309, 1.475325260596617, 1.0,
-                    -0.4998683277677738, 0.0, 0.8661014114378578,
-                    8.392779165529822, -4.872132233491925, 1.0,
-                    -0.4998683277677738, -0.4998683277677738,
-                    0.9999999999999998],
-                [
-                    23.172958821026146, -12.082222949686667, 0.8638732700760804,
-                    1.9946130147119674, 5.031452979103291, -7.050516119945792,
-                    1.748430778102618, 1.8429324641866538, 1.0,
-                    -0.1824159925283452, 0.0, 0.9832047082549638,
-                    9.737394047529511, -3.599694370440481, 1.0,
-                    -0.1824159925283452, -0.1824159925283452, 1.0],
-                [
-                    23.297535808547288, -11.953755710161275, 0.9072262263281412,
-                    2.038415026307854, 5.077023712251806, -7.002834647163905,
-                    1.8341276034814342, 1.9342104539936198, 1.0,
-                    -0.11914681376106773, 0.0, 0.9926163153785295,
-                    10.04712642808761, -3.279726337284848, 1.0,
-                    -0.11914681376106773, -0.11914681376106773, 1.0],
-                [
-                    23.414881445294785, -11.827186645456546, 0.9496262281823566,
-                    2.0799788380503896, 5.122575111912635, -6.956987873207689,
-                    1.9267010221875194, 2.037552670590557, 1.0,
-                    -0.05405597174621992, 0.0, 0.9980144888091018,
-                    10.341823298702858, -2.9652090989981446, 1.0,
-                    -0.05405597174621992, -0.05405597174621992, 1.0],
-                [
-                    23.886309231503407, -11.271358583109274, 1.1291002308476907,
-                    2.2792935296864023, 5.301100750990051, -6.764390906818612,
-                    2.47402755834427, 2.752227482220829, 1.0,
-                    0.21706302023830526, 0.0, 0.9999999999992683,
-                    11.651165182343037, -1.617992153129629, 1.0,
-                    0.21706302023830526, 0.21706302023830526,
-                    1.0000000000000002]])
+                [ 23.2660226,-11.9262003,  0.9088701,  1.9621971,  4.9687332],
+                [ 23.2807593,-11.8603589,  1.0579523,  2.0172004,  5.0199548],
+                [ 23.2530863,-11.672336 ,  0.7379906,  2.129682 ,  5.1128176],
+                [ 23.1146539,-12.183051 ,  0.9163538,  2.0082782,  5.1746667],
+                [ 23.2309701,-12.0327003,  0.8934087,  2.1269978,  5.173563 ]])
+    
+    def _test_model_log_likelihood(self, model):
+        self.assertEqual(
+            model.log_likelihood.shape, (4000, len(self.data)))
+        numpy.testing.assert_allclose(
+            model.log_likelihood.iloc[:5,:5].values,
+            [
+                [-4.4402421,-3.3641898,-3.4745691,-4.9062166,-3.2324176],
+                [-4.6233423,-3.3707746,-3.6820983,-5.1131563,-3.2237245],
+                [-3.8385064,-3.2420162,-3.3174715,-4.3918281,-3.1988372],
+                [-3.6992945,-3.2302977,-3.5341838,-4.726541 ,-3.2277161],
+                [-4.2840764,-3.1872561,-3.5349734,-4.8327181,-3.1293843]])
 
 if __name__ == "__main__":
     unittest.main()

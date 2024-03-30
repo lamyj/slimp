@@ -7,6 +7,8 @@
 #include "action_parameters.h"
 #include "actions.h"
 
+#include "multivariate_log_likelihood.h"
+#include "multivariate_sampler.h"
 #include "univariate_log_likelihood.h"
 #include "univariate_predict_posterior.h"
 #include "univariate_predict_prior.h"
@@ -24,6 +26,10 @@
 PYBIND11_MODULE(_slimp, module)
 {
     REGISTER(univariate);
+    Factory::instance().register_(
+        "multivariate_sampler", new_multivariate_sampler);
+    Factory::instance().register_(
+        "multivariate_log_likelihood", new_multivariate_log_likelihood);
     
     auto action_parameters_ = module.def_submodule("action_parameters");
     
