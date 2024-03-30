@@ -3,6 +3,7 @@
 #include <functional>
 #include <map>
 #include <ostream>
+#include <stdexcept>
 #include <string>
 
 #include <stan/model/model_header.hpp>
@@ -34,6 +35,12 @@ Factory
     std::string const & name, stan::io::var_context & context,
     unsigned int seed, std::ostream * stream) const
 {
-    auto && creator = this->_creators.at(name);
+    auto const iterator = this->_creators.find(name);
+    if(iterator == this->_creators.end())
+    {
+        throw std::runtime_error("No such program: "+name);
+    }
+    
+    auto && creator = iterator->second;
     return creator(context, seed, stream);
 }
