@@ -46,6 +46,10 @@ class Model:
         return self._model_data.fit_data
     
     @property
+    def sampler_parameters(self):
+        return self._sampler_parameters
+    
+    @property
     def draws(self):
         return self._samples.draws if self._samples is not None else None
     

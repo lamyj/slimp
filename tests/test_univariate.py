@@ -25,7 +25,7 @@ class TestUnivariate(unittest.TestCase):
     
     def test_no_sample(self):
         def dump(path):
-            model = slimp.Model(self.formula, self.data)
+            model = slimp.Model(self.formula, self.data, seed=42, num_chains=4)
             with open(path, "wb") as fd:
                 pickle.dump(model, fd)
         def load(path):
@@ -37,6 +37,7 @@ class TestUnivariate(unittest.TestCase):
             model = load(os.path.join(dir, "model.pkl"))
             
             self._test_model_data(model)
+            self._test_sampler_parameters(model)
             self.assertTrue(model.draws is None)
     
     def test_sample(self):
@@ -54,6 +55,7 @@ class TestUnivariate(unittest.TestCase):
             model = load(os.path.join(dir, "model.pkl"))
             
             self._test_model_data(model)
+            self._test_sampler_parameters(model)
             self._test_model_diagnostics(model)
             self._test_model_draws(model)
     
@@ -63,6 +65,11 @@ class TestUnivariate(unittest.TestCase):
         
         self.assertTrue(self.predictors.equals(model.predictors))
         self.assertTrue(self.outcomes.equals(model.outcomes))
+    
+    def _test_sampler_parameters(self, model):
+        self.assertEqual(model.sampler_parameters.seed, 42)
+        self.assertEqual(model.sampler_parameters.num_chains, 4)
+        self.assertEqual(model.sampler_parameters.num_samples, 1000)
     
     def _test_model_diagnostics(self, model):
         numpy.testing.assert_equal(
