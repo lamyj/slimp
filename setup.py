@@ -1,15 +1,13 @@
 import glob
 import os
-import shlex
+import subprocess
 import sys
+import tempfile
 
 import setuptools
 import setuptools.command.build
 
-sys.path.insert(0, "slimp")
-import compile as slimp_compile
-
-class BuildStanModels(setuptools.Command, setuptools.command.build.SubCommand):
+class BuildCMake(setuptools.Command, setuptools.command.build.SubCommand):
     def __init__(self, *args, **kwargs):
         setuptools.Command.__init__(self, *args, **kwargs)
         setuptools.command.build.SubCommand.__init__(self, *args, **kwargs)
@@ -24,37 +22,32 @@ class BuildStanModels(setuptools.Command, setuptools.command.build.SubCommand):
         pass
         
     def finalize_options(self):
-        self.sources = []
-        for program in [
-                "sampler", "log_likelihood",
-                "predict_prior", "predict_posterior"]:
-            self.sources.extend([
-                x for x in glob.glob(f"slimp/*_{program}.stan")
-                if os.path.isfile(x)])
-        self.stanc_options = shlex.split(
-            os.environ.get("SLIMP_STANC_OPTIONS", ""))
-        for option in [
-                "STAN_CPP_OPTIMS", "STAN_THREADS", "STAN_NO_RANGE_CHECKS"]:
-            if not any(x.startswith(f"{option}=") for x in self.stanc_options):
-                self.stanc_options.append(f"{option}=TRUE")
-        
-        here = os.path.dirname(os.path.abspath(__file__))
-        self.stanc_options.append(
-            f"STANCFLAGS=--include-paths={os.path.join(here, 'slimp')}")
-        
-        self.cxxflags = os.environ.get("SLIMP_CXXFLAGS", "")
+        self.sources = [
+            *sorted(glob.glob(f"slimp/*.stan")),
+            *sorted(glob.glob(f"slimp/*.h")),
+            *sorted(glob.glob(f"slimp/*.cpp"))]
         self.set_undefined_options("build_py", ("build_lib", "build_lib"))
     
     def run(self):
-        for source in self.sources:
-            slimp_compile.compile(
-                source, os.path.join(self.build_lib, "slimp"),
-                self.stanc_options, self.cxxflags)
+        here = os.path.abspath(os.path.dirname(__file__))
+        with tempfile.TemporaryDirectory() as build_dir:
+            subprocess.check_call(
+                [
+                    "cmake", f"-DPython_EXECUTABLE={sys.executable}",
+                    "-DCMAKE_BUILD_TYPE=Release",
+                    "-DCMAKE_LIBRARY_OUTPUT_DIRECTORY="
+                        f"{os.path.join(here, self.build_lib, 'slimp')}", 
+                    "-S", here, "-B", build_dir])
+            
+            subprocess.check_call(
+                [
+                    "cmake", "--build", build_dir, "--target", "_slimp",
+                    "--config", "Release", "--parallel"])
     
     def get_source_files(self):
         return self.sources
 
-setuptools.command.build.build.sub_commands.append(("build_stan_models", None))
+setuptools.command.build.build.sub_commands.append(("build_cmake", None))
 
 setuptools.setup(
     name="slimp",
@@ -65,12 +58,11 @@ setuptools.setup(
     author="Julien Lamy",
     author_email="lamy@unistra.fr",
     
-    cmdclass={"build_stan_models": BuildStanModels},
+    cmdclass={"build_cmake": BuildCMake},
 
     packages=["slimp"],
     
     install_requires=[
-        "cmdstanpy",
         "formulaic",
         "numpy",
         "matplotlib",
