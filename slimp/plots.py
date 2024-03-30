@@ -23,17 +23,12 @@ def parameters_plot(model, include=None, exclude=None, **kwargs):
         **kwargs)
     ax.set(xlabel=model.outcomes.columns[0], ylabel=None)
 
-def predictive_plot(
-        model, use_prior=False, predict_kwargs={}, count=50, alpha=0.2,
-        plot_kwargs={}):
-    y_posterior = model.posterior_predict
-    if "seed" in predict_kwargs:
-        numpy.random.seed(predict_kwargs["seed"])
-    subset = numpy.random.randint(0, len(y_posterior), count)
+def predictive_plot(model, use_prior=False, count=50, alpha=0.2, plot_kwargs={}):
+    y = model.prior_predict if use_prior else model.posterior_predict
+    subset = numpy.random.randint(0, len(y), count)
     
     for draw in subset:
-        seaborn.kdeplot(
-            y_posterior.iloc[draw, :], color="C0", alpha=alpha, **plot_kwargs)
+        seaborn.kdeplot(y.iloc[draw, :], color="C0", alpha=alpha, **plot_kwargs)
     
     seaborn.kdeplot(
         model.outcomes.values.squeeze(), color="k", alpha=1, **plot_kwargs)
