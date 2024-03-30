@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.14)
 
-project("slimp" VERSION 0.3.0)
+project("slimp" VERSION 0.4.0)
 
 set(CMAKE_INSTALL_MESSAGE LAZY)
 
