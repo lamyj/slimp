@@ -68,7 +68,9 @@ bool
 VarContext
 ::contains_r(std::string const & name) const
 {
-    return this->_vals_r.find(name) != this->_vals_r.end();
+    return
+        this->_vals_r.find(name) != this->_vals_r.end()
+        || this->contains_i(name);
 }
 
 std::vector<double>
@@ -82,7 +84,8 @@ VarContext
     }
     else
     {
-        return {};
+        auto const vals_i = this->vals_i(name);
+        return {vals_i.begin(), vals_i.end()};
     }
 }
 
@@ -104,7 +107,7 @@ VarContext
     }
     else
     {
-        return {};
+        return this->dims_i(name);
     }
 }
 
