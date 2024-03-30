@@ -43,5 +43,5 @@ jobs:
       - name: Build
         run: python .ci/build/build.py
       
-      - name: Build
+      - name: Post build
         run: python .ci/build/post_build.py
