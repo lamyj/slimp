@@ -1,4 +1,4 @@
-name: Build slimp
+name: Build (wheel)
 on: push
 
 jobs:
