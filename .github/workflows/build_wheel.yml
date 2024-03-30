@@ -37,6 +37,9 @@ jobs:
       - name: Set-up
         run: python .ci/build/conda.py ${{ env.MAMBA_EXE }}
       
+      - name: Set CmdStan environment
+        run: echo "CMDSTAN=${CONDA_PREFIX}/bin/cmdstan" >> ${GITHUB_ENV}
+      
       - name: Build
         run: |
           python setup.py sdist
@@ -44,5 +47,5 @@ jobs:
       
       - name: Post build
         run: |
-          python3 -m pip install dist/*.whl
-          python -c "import slimp"
+          python -m pip install dist/*.whl
+          cd / && python -c "import slimp"
