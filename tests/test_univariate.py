@@ -62,6 +62,7 @@ class TestUnivariate(unittest.TestCase):
             self._test_model_prior_predict(model)
             self._test_model_posterior_epred(model)
             self._test_model_posterior_predict(model)
+            self._test_r_squared(model)
     
     def _test_model_data(self, model):
         self.assertEqual(self.formula, model.formula)
@@ -152,8 +153,19 @@ class TestUnivariate(unittest.TestCase):
                 [12.4243714,13.452148 ,12.1742729,13.2278094,13.6020354],
                 [14.0521864,11.4358118,12.9317417,14.3156692,14.6669161],
                 [11.2820318,12.7343338,10.5181746,12.7999644,13.3685442],
-                [ 8.4333726,10.277509 ,10.1294386,13.1056473,12.9209938]]
-)
+                [ 8.4333726,10.277509 ,10.1294386,13.1056473,12.9209938]])
+    
+    def _test_r_squared(self, model):
+        r_squared = slimp.stats.r_squared(model)
+        self.assertEqual(r_squared.shape, (4000,))
+        numpy.testing.assert_allclose(
+            r_squared.iloc[:25],
+            [
+                0.9259535,0.9196415,0.9205905,0.9275547,0.9166945,
+                0.9225944,0.9373534,0.9179977,0.9451422,0.9247839,
+                0.9389737,0.9264515,0.948016 ,0.9335925,0.9255632,
+                0.9053084,0.9217487,0.9330363,0.9227269,0.9301449,
+                0.9140806,0.9196317,0.9187871,0.9218806,0.9319721])
 
 if __name__ == "__main__":
     unittest.main()
