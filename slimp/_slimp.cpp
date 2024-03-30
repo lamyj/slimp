@@ -8,8 +8,9 @@
 #include "actions.h"
 
 #include "multivariate_log_likelihood.h"
-#include "multivariate_sampler.h"
+#include "multivariate_predict_posterior.h"
 #include "multivariate_predict_prior.h"
+#include "multivariate_sampler.h"
 
 #include "univariate_log_likelihood.h"
 #include "univariate_predict_posterior.h"
@@ -28,9 +29,7 @@
 PYBIND11_MODULE(_slimp, module)
 {
     REGISTER_ALL(univariate);
-    REGISTER(multivariate, sampler);
-    REGISTER(multivariate, log_likelihood);
-    REGISTER(multivariate, predict_prior);
+    REGISTER_ALL(multivariate);
     
     auto action_parameters_ = module.def_submodule("action_parameters");
     

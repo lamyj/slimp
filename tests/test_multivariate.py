@@ -63,6 +63,8 @@ class TestMultivariate(unittest.TestCase):
             self._test_model_draws(model)
             self._test_model_log_likelihood(model)
             self._test_model_prior_predict(model)
+            self._test_model_posterior_epred(model)
+            self._test_model_posterior_predict(model)
     
     def _test_model_data(self, model):
         self.assertEqual(self.formula, model.formula)
@@ -141,6 +143,30 @@ class TestMultivariate(unittest.TestCase):
                 [94.7920922,85.4160147,79.9455973,70.0779007,63.7733472],
                 [65.9746989,62.0146905,42.0816617,35.382645 ,22.5919671],
                 [96.5068115,80.8457643,59.8711939,55.3557259,53.9276823]])
+    
+    def _test_model_posterior_epred(self, model):
+        self.assertEqual(
+            model.posterior_epred.shape, (4000, len(self.formula)*len(self.data)))
+        numpy.testing.assert_allclose(
+            model.posterior_epred.iloc[:5,:5].values,
+            [
+                [10.3462201,11.2550902,12.1639604,13.0728305,13.9817006],
+                [ 9.6681166,10.5864564,11.5047961,12.4231358,13.3414756],
+                [10.5162627,11.3718041,12.2273456,13.082887 ,13.9384285],
+                [ 9.9679279,10.8652681,11.7626083,12.6599485,13.5572887],
+                [ 9.4425723,10.5005246,11.5584769,12.6164293,13.6743816]])
+    
+    def _test_model_posterior_predict(self, model):
+        self.assertEqual(
+            model.posterior_predict.shape, (4000, len(self.formula)*len(self.data)))
+        numpy.testing.assert_allclose(
+            model.posterior_predict.iloc[:5,:5].values,
+            [
+                [10.2116486,12.4029454,14.3543352,12.2280595,13.7668074],
+                [11.6516064,10.5055876,11.2716413,13.104573 ,14.3552479],
+                [14.3348934,11.9871694,12.7829482,14.8559529,14.7204133],
+                [11.3787327, 9.5071152,11.4974825,16.4666559,15.9496412],
+                [ 9.8451985,14.0575395,13.5025906,11.1136866,11.873199 ]])
 
 if __name__ == "__main__":
     unittest.main()
