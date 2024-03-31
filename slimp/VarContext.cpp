@@ -1,6 +1,6 @@
 #include "VarContext.h"
 
-#include <cstdint>
+#include <stdint.h>
 #include <unordered_map>
 #include <stdexcept>
 #include <string>
@@ -41,20 +41,75 @@ VarContext
             std::vector<size_t> const shape(
                 array.shape(), array.shape()+array.ndim());
             
-            if(dtype.char_() == 'l')
+            // https://numpy.org/doc/stable/reference/arrays.scalars.html#arrays-scalars-built-in
+            
+            // Signed integer type
+            if(dtype.char_() == 'b')
             {
                 auto & v = this->_vals_i.insert({key, {}}).first->second;
                 v.resize(array.size());
-                auto data = reinterpret_cast<long const *>(array.data());
+                auto data = reinterpret_cast<int8_t const *>(array.data());
                 std::copy(data, data+array.size(), v.begin());
                 this->_dims_i.insert({key, shape});
             }
-            else if(dtype.char_() == 'd')
+            else if(dtype.char_() == 'h')
             {
-                auto data = reinterpret_cast<double const *>(array.data());
-                this->_vals_r.insert({key, {data, data+array.size()}});
-                this->_dims_r.insert({key, shape});
+                auto & v = this->_vals_i.insert({key, {}}).first->second;
+                v.resize(array.size());
+                auto data = reinterpret_cast<int16_t const *>(array.data());
+                std::copy(data, data+array.size(), v.begin());
+                this->_dims_i.insert({key, shape});
             }
+            else if(dtype.char_() == 'i')
+            {
+                auto & v = this->_vals_i.insert({key, {}}).first->second;
+                v.resize(array.size());
+                auto data = reinterpret_cast<int32_t const *>(array.data());
+                std::copy(data, data+array.size(), v.begin());
+                this->_dims_i.insert({key, shape});
+            }
+            else if(dtype.char_() == 'l')
+            {
+                auto & v = this->_vals_i.insert({key, {}}).first->second;
+                v.resize(array.size());
+                auto data = reinterpret_cast<int64_t const *>(array.data());
+                std::copy(data, data+array.size(), v.begin());
+                this->_dims_i.insert({key, shape});
+            }
+            // Unsigned integer types
+            else if(dtype.char_() == 'B')
+            {
+                auto & v = this->_vals_i.insert({key, {}}).first->second;
+                v.resize(array.size());
+                auto data = reinterpret_cast<uint8_t const *>(array.data());
+                std::copy(data, data+array.size(), v.begin());
+                this->_dims_i.insert({key, shape});
+            }
+            else if(dtype.char_() == 'H')
+            {
+                auto & v = this->_vals_i.insert({key, {}}).first->second;
+                v.resize(array.size());
+                auto data = reinterpret_cast<uint16_t const *>(array.data());
+                std::copy(data, data+array.size(), v.begin());
+                this->_dims_i.insert({key, shape});
+            }
+            else if(dtype.char_() == 'I')
+            {
+                auto & v = this->_vals_i.insert({key, {}}).first->second;
+                v.resize(array.size());
+                auto data = reinterpret_cast<uint32_t const *>(array.data());
+                std::copy(data, data+array.size(), v.begin());
+                this->_dims_i.insert({key, shape});
+            }
+            else if(dtype.char_() == 'L')
+            {
+                auto & v = this->_vals_i.insert({key, {}}).first->second;
+                v.resize(array.size());
+                auto data = reinterpret_cast<uint64_t const *>(array.data());
+                std::copy(data, data+array.size(), v.begin());
+                this->_dims_i.insert({key, shape});
+            }
+            // Floating-point types
             else if(dtype.char_() == 'f')
             {
                 auto & v = this->_vals_r.insert({key, {}}).first->second;
@@ -63,6 +118,13 @@ VarContext
                 std::copy(data, data+array.size(), v.begin());
                 this->_dims_r.insert({key, shape});
             }
+            else if(dtype.char_() == 'd')
+            {
+                auto data = reinterpret_cast<double const *>(array.data());
+                this->_vals_r.insert({key, {data, data+array.size()}});
+                this->_dims_r.insert({key, shape});
+            }
+            // Unsupported type
             else
             {
                 throw std::runtime_error(
