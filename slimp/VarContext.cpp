@@ -55,6 +55,14 @@ VarContext
                 this->_vals_r.insert({key, {data, data+array.size()}});
                 this->_dims_r.insert({key, shape});
             }
+            else if(dtype.char_() == 'f')
+            {
+                auto & v = this->_vals_r.insert({key, {}}).first->second;
+                v.resize(array.size());
+                auto data = reinterpret_cast<float const *>(array.data());
+                std::copy(data, data+array.size(), v.begin());
+                this->_dims_r.insert({key, shape});
+            }
             else
             {
                 throw std::runtime_error(
