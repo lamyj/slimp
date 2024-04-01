@@ -86,13 +86,13 @@ pybind11::dict sample(
     auto const return_code = stan::services::sample::hmc_nuts_diag_e_adapt(
         model, parameters.num_chains, init_contexts, parameters.seed,
         parameters.id, parameters.init_radius, parameters.num_warmup,
-        parameters.num_samples, parameters.thin, parameters.save_warmup, 0,
-        parameters.hmc.stepsize, parameters.hmc.stepsize_jitter,
-        parameters.hmc.max_depth, parameters.adapt.delta,
-        parameters.adapt.gamma, parameters.adapt.kappa, parameters.adapt.t0,
-        parameters.adapt.init_buffer, parameters.adapt.term_buffer,
-        parameters.adapt.window, interrupt, logger, init_writers,
-        sample_writers, diagnostic_writers);
+        parameters.num_samples, parameters.thin, parameters.save_warmup,
+        parameters.refresh, parameters.hmc.stepsize,
+        parameters.hmc.stepsize_jitter, parameters.hmc.max_depth,
+        parameters.adapt.delta, parameters.adapt.gamma, parameters.adapt.kappa,
+        parameters.adapt.t0, parameters.adapt.init_buffer,
+        parameters.adapt.term_buffer, parameters.adapt.window, interrupt,
+        logger, init_writers, sample_writers, diagnostic_writers);
     if(return_code != 0)
     {
         throw std::runtime_error(

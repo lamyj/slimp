@@ -119,6 +119,7 @@ PYBIND11_MODULE(_slimp, module)
         .def_readwrite("seed", &action_parameters::Sample::seed)
         .def_readwrite("id", &action_parameters::Sample::id)
         .def_readwrite("init_radius", &action_parameters::Sample::init_radius)
+        .def_readwrite("refresh", &action_parameters::Sample::refresh)
         .def(pybind11::pickle(
             [&](action_parameters::Sample const & self) {
                 pybind11::dict state;

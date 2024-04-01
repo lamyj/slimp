@@ -7,12 +7,16 @@ from .model_data import ModelData
 from .samples import Samples
 
 class Model:
-    def __init__(self, formula, data, seed=-1, num_chains=1):
+    def __init__(
+            self, formula, data, seed=-1, num_chains=1, sampler_parameters=None):
         self._model_data = ModelData(formula, data)
         
-        self._sampler_parameters = action_parameters.Sample()
-        self._sampler_parameters.seed = seed
-        self._sampler_parameters.num_chains = num_chains
+        if sampler_parameters is None:
+            self._sampler_parameters = action_parameters.Sample()
+            self._sampler_parameters.seed = seed
+            self._sampler_parameters.num_chains = num_chains
+        else:
+            self._sampler_parameters = sampler_parameters
         
         self._model_name = (
             "multivariate" if len(self._model_data.formula)>1

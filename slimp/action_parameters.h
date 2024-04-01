@@ -42,6 +42,7 @@ public:
     long seed = -1;
     int id = 1;
     double init_radius = 2;
+    int refresh = 0;
 };
 
 class GenerateQuantities
