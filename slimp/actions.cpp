@@ -13,7 +13,6 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 #include <stan/callbacks/interrupt.hpp>
-#include <stan/callbacks/stream_logger.hpp>
 #include <stan/io/empty_var_context.hpp>
 #include <stan/analyze/mcmc/compute_effective_sample_size.hpp>
 #include <stan/analyze/mcmc/compute_potential_scale_reduction.hpp>
@@ -23,6 +22,7 @@
 #include "action_parameters.h"
 #include "ArrayWriter.h"
 #include "Factory.h"
+#include "Logger.h"
 #include "VarContext.h"
 
 pybind11::dict sample(
@@ -47,11 +47,7 @@ pybind11::dict sample(
     auto const hmc_fixed_cols = hmc_names.size();
     
     stan::callbacks::interrupt interrupt;
-    // FIXME: return this
-    std::vector<std::ostringstream> log_streams(5);
-    stan::callbacks::stream_logger logger(
-        log_streams[0], log_streams[1], log_streams[2], log_streams[3],
-        log_streams[4]);
+    Logger logger;
     
     std::vector<std::shared_ptr<stan::io::var_context>> init_contexts;
     std::vector<stan::callbacks::writer> init_writers(parameters.num_chains);
@@ -128,11 +124,7 @@ pybind11::dict generate_quantities(
         name+"_"+variant, var_context, parameters.seed, &std::cout);
     
     stan::callbacks::interrupt interrupt;
-    // FIXME: return this
-    std::vector<std::ostringstream> log_streams(5);
-    stan::callbacks::stream_logger logger(
-        log_streams[0], log_streams[1], log_streams[2], log_streams[3],
-        log_streams[4]);
+    Logger logger;
     
     auto const num_draws = draws.rows() / parameters.num_chains;
     
