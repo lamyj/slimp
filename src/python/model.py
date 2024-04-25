@@ -104,9 +104,8 @@ class Model:
         return data
     
     def sample(self):
-        data = _slimp.sample(
-            self._model_name, self._model_data.fit_data,
-            self._sampler_parameters)
+        data = getattr(_slimp, f"{self._model_name}_sampler")(
+            self._model_data.fit_data, self._sampler_parameters)
         self._samples = Samples(
             self._get_df(data["array"], data["columns"]),
             self._model_data.predictor_mapper, data["parameters_columns"])
@@ -168,8 +167,7 @@ class Model:
         parameters.seed = self._sampler_parameters.seed
         parameters.num_chains = self._sampler_parameters.num_chains
         
-        data = _slimp.generate_quantities(
-            self._model_name, name, 
+        data = getattr(_slimp, f"{self._model_name}_{name}")( 
             self.fit_data | { "N_new": N_new, "X_new": X_new},
             # NOTE: must only include model parameters
             self._samples.samples[self._samples.parameters_columns].values,

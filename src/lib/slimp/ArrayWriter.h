@@ -5,9 +5,15 @@
 #include <string>
 #include <vector>
 
+// WARNING: Stan must be included before Eigen so that the plugin system is
+// active. https://discourse.mc-stan.org/t/includes-in-user-header/26093
+#include <stan/math.hpp>
+
 #include <Eigen/Dense>
 #include <pybind11/numpy.h>
 #include <stan/callbacks/writer.hpp>
+
+#include "slimp/api.h"
 
 /**
  * @brief Stan writer to a user-provided numpy array.
@@ -15,7 +21,7 @@
  * The array must be a F-style, 3D array of doubles with shape chains × draws ×
  * parameters.
  */
-class ArrayWriter: public stan::callbacks::writer
+class SLIMP_API ArrayWriter: public stan::callbacks::writer
 {
 public:
     using Array = pybind11::array_t<double, pybind11::array::f_style>;

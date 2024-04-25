@@ -9,8 +9,10 @@
 #include <pybind11/pybind11.h>
 #include <stan/io/var_context.hpp>
 
+#include "slimp/api.h"
+
 /// @brief Input data based on a Python dictionary
-class VarContext: public stan::io::var_context
+class SLIMP_API VarContext: public stan::io::var_context
 {
 public:
     VarContext() = default;

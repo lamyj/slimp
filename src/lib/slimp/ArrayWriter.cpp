@@ -5,6 +5,10 @@
 #include <string>
 #include <vector>
 
+// WARNING: Stan must be included before Eigen so that the plugin system is
+// active. https://discourse.mc-stan.org/t/includes-in-user-header/26093
+#include <stan/math.hpp>
+
 #include <Eigen/Dense>
 #include <pybind11/numpy.h>
 #include <stan/callbacks/writer.hpp>

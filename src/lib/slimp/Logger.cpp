@@ -85,9 +85,12 @@ Logger
         return;
     }
     
-    std::lock_guard<std::mutex> guard(this->_mutex);
-    
-    auto logging = pybind11::module::import("logging");
-    auto logger = pybind11::getattr(logging, level.c_str());
-    logger(message);
+    // std::lock_guard<std::mutex> guard(this->_mutex);
+    // 
+    // FIXME: need to synchronize 
+    // pybind11::gil_scoped_acquire gil;
+    // 
+    // auto logging = pybind11::module::import("logging");
+    // auto logger = pybind11::getattr(logging, level.c_str());
+    // logger(message);
 }

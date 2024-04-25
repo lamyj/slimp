@@ -1,4 +1,9 @@
+functions
+{
+
 #include functions.stan
+
+}
 
 data
 {

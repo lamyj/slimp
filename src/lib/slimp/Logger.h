@@ -6,7 +6,9 @@
 #include <sstream>
 #include <stan/callbacks/logger.hpp>
 
-class Logger: public stan::callbacks::logger
+#include "slimp/api.h"
+
+class SLIMP_API Logger: public stan::callbacks::logger
 {
 public:
     Logger() = default;

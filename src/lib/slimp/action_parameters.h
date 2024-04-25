@@ -3,10 +3,12 @@
 
 #include <stddef.h>
 
+#include "slimp/api.h"
+
 namespace action_parameters
 {
 
-class Adapt
+class SLIMP_API Adapt
 {
 public:
     bool engaged=true;
@@ -20,7 +22,7 @@ public:
     bool save_metric=false;
 };
 
-class HMC
+class SLIMP_API HMC
 {
 public:
     double int_time = 6.28319;
@@ -29,7 +31,7 @@ public:
     double stepsize_jitter = 0;
 };
 
-class Sample
+class SLIMP_API Sample
 {
 public:
     int num_samples = 1000;
@@ -45,7 +47,7 @@ public:
     int refresh = 0;
 };
 
-class GenerateQuantities
+class SLIMP_API GenerateQuantities
 {
 public:
     size_t num_chains = 1;

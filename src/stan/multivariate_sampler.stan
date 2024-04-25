@@ -7,7 +7,12 @@ univariate model for more details.
 
 */
 
+functions
+{
+
 #include functions.stan
+
+}
 
 data
 {

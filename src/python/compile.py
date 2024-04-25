@@ -7,26 +7,16 @@ import sys
 import tempfile
 import textwrap
 
-def compile(stan_file, h_file, cpp_file, include_path=None):
+def compile(stan_file, h_file, include_path=None):
     name = os.path.splitext(os.path.basename(stan_file))[0]
     
-    header = textwrap.dedent(f"""\
-        #include <stan/model/model_header.hpp>
-        
-        stan::model::model_base & new_{name}(
-            stan::io::var_context & data_context, unsigned int seed,
-            std::ostream * msg_stream);
-    """)
-    with open(h_file, "w") as fd:
-        fd.write(header)
-
     subprocess.check_call([
         f"{os.environ['CMDSTAN']}/bin/stanc",
         *(["--include-paths", include_path] if include_path else []),
         stan_file, "--name", "model", "--O1",
-        "--o", cpp_file])
+        "--o", h_file])
     
-    with open(cpp_file) as fd:
+    with open(h_file) as fd:
         contents = fd.read()
     
     contents = re.sub("model_namespace", name, contents)
@@ -36,10 +26,10 @@ def compile(stan_file, h_file, cpp_file, include_path=None):
     contents = re.sub(
         "get_stan_profile_data", f"get_stan_profile_data_{name}", contents)
     
-    with open(cpp_file, "w") as fd:
+    with open(h_file, "w") as fd:
         fd.write(contents)
 
-def stan_info(names, optimize=True, use_threads=1, range_checks=False):
+def stan_info(names, optimize=True, use_threads=True, range_checks=False):
     if isinstance(names, str):
         names = [names]
     
@@ -78,13 +68,15 @@ def main():
         parser = argparse.ArgumentParser()
         parser.add_argument("stan_file")
         parser.add_argument("h_file")
-        parser.add_argument("cpp_file")
         parser.add_argument("--include-path", "-I")
         arguments = parser.parse_args(sys.argv[2:])
         compile(**vars(arguments))
     elif command == "info":
         parser = argparse.ArgumentParser()
         parser.add_argument("names", metavar="name", nargs="+")
+        parser.add_argument("--no-optimize", dest="optimize", action="store_false")
+        parser.add_argument("--no-use-threads", dest="use_threads", action="store_false")
+        parser.add_argument("--range-checks", dest="use_threads", action="store_true")
         arguments = parser.parse_args(sys.argv[2:])
         print(shlex.join(stan_info(**vars(arguments))))
     else:

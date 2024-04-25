@@ -8,8 +8,10 @@
 
 #include <stan/model/model_header.hpp>
 
+#include "slimp/api.h"
+
 /// @brief Register and create models.
-class Factory
+class SLIMP_API Factory
 {
 public:
     using Creator = std::function<

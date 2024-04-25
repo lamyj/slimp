@@ -14,12 +14,8 @@ Factory &
 Factory
 ::instance()
 {
-    if(Factory::_instance == nullptr)
-    {
-        Factory::_instance = new Factory();
-    }
-    
-    return *Factory::_instance;
+    static Factory instance;
+    return instance;
 }
 
 void

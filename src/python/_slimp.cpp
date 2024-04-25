@@ -1,11 +1,14 @@
+// WARNING: Stan must be included before Eigen so that the plugin system is
+// active. https://discourse.mc-stan.org/t/includes-in-user-header/26093
+#include <stan/math.hpp>
+
+#include <pybind11/eigen.h>
 #include <pybind11/pybind11.h>
+#include <pybind11/stl.h>
 
-// WARNING: Factory *must* be included first to avoid Eigen-related compilation
-// errors
-#include "Factory.h"
-
-#include "action_parameters.h"
-#include "actions.h"
+#include "slimp/action_parameters.h"
+#include "slimp/actions.h"
+#include "slimp/Factory.h"
 
 #include "multivariate_log_likelihood.h"
 #include "multivariate_predict_posterior.h"
@@ -17,20 +20,22 @@
 #include "univariate_predict_prior.h"
 #include "univariate_sampler.h"
 
-#define REGISTER(prefix, suffix) \
-    Factory::instance().register_(#prefix "_" #suffix, new_##prefix##_##suffix);
-
+#define REGISTER_SAMPLER(name) \
+    module.def(\
+        #name "_sampler", \
+        &sample<name##_sampler::model>);
+#define REGISTER_GQ(name, quantity) \
+    module.def( \
+        #name "_" #quantity, \
+        &generate_quantities<name##_##quantity::model>);
 #define REGISTER_ALL(name) \
-    REGISTER(name, sampler); \
-    REGISTER(name, log_likelihood); \
-    REGISTER(name, predict_prior); \
-    REGISTER(name, predict_posterior);
+    REGISTER_SAMPLER(name); \
+    REGISTER_GQ(name, log_likelihood); \
+    REGISTER_GQ(name, predict_posterior); \
+    REGISTER_GQ(name, predict_prior);
 
 PYBIND11_MODULE(_slimp, module)
 {
-    REGISTER_ALL(univariate);
-    REGISTER_ALL(multivariate);
-    
     auto action_parameters_ = module.def_submodule("action_parameters");
     
     auto adapt_pickler = std::make_pair(
@@ -160,9 +165,10 @@ PYBIND11_MODULE(_slimp, module)
         .def_readwrite(
             "num_chains", &action_parameters::GenerateQuantities::num_chains)
         .def_readwrite("seed", &action_parameters::GenerateQuantities::seed);
+        
+    REGISTER_ALL(univariate);
+    REGISTER_ALL(multivariate);
     
-    module.def("generate_quantities", &generate_quantities);
-    module.def("sample", &sample);
     module.def("get_effective_sample_size", &get_effective_sample_size);
     module.def("get_potential_scale_reduction", &get_potential_scale_reduction);
 }
