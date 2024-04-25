@@ -11,21 +11,17 @@ execute_process(
     OUTPUT_VARIABLE PYTHON_SITE_PACKAGES
     OUTPUT_STRIP_TRAILING_WHITESPACE)
 
+set(compile_helper ${Python_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/compile.py)
+
 execute_process(
-    COMMAND
-        make -I "$ENV{CMDSTAN}"
-        -f "${CMAKE_CURRENT_SOURCE_DIR}/stan_info.make" cxxflags
+    COMMAND ${compile_helper} info cxxflags
     OUTPUT_VARIABLE STAN_CXXFLAGS OUTPUT_STRIP_TRAILING_WHITESPACE)
 execute_process(
-    COMMAND
-        make -I "$ENV{CMDSTAN}"
-        -f "${CMAKE_CURRENT_SOURCE_DIR}/stan_info.make" ldflags
+    COMMAND ${compile_helper} info ldflags
     OUTPUT_VARIABLE STAN_LDFLAGS OUTPUT_STRIP_TRAILING_WHITESPACE)
-    execute_process(
-        COMMAND
-            make -I "$ENV{CMDSTAN}"
-            -f "${CMAKE_CURRENT_SOURCE_DIR}/stan_info.make" libs
-        OUTPUT_VARIABLE STAN_LIBS OUTPUT_STRIP_TRAILING_WHITESPACE)
+execute_process(
+    COMMAND ${compile_helper} info libs
+    OUTPUT_VARIABLE STAN_LIBS OUTPUT_STRIP_TRAILING_WHITESPACE)
 
 file(GLOB_RECURSE header_files "*.h")
 file(GLOB_RECURSE source_files "*.cpp")
@@ -34,38 +30,24 @@ file(
     GLOB_RECURSE stan_files
     "*_sampler.stan" "*_log_likelihood.stan" "*_predict_prior.stan"
     "*_predict_posterior.stan")
+
+foreach(stan_file ${stan_files})
+    get_filename_component(root "${stan_file}" NAME_WE)
+    
+    add_custom_command(
+        OUTPUT "${root}.h" "${root}.cpp"
+        COMMAND
+            ${compile_helper} compile -I ${CMAKE_CURRENT_SOURCE_DIR}
+                ${stan_file} "${root}.h" "${root}.cpp"
+        DEPENDS ${stan_file})
+    list(APPEND header_files "${root}.h")
+    list(APPEND source_files "${root}.cpp")
+endforeach()
+
 list(SORT header_files)
 list(SORT source_files)
 list(SORT python_files)
 list(SORT stan_files)
-
-foreach(stan_file ${stan_files})
-    get_filename_component(name "${stan_file}" NAME_WE)
-    
-    add_custom_command(
-        OUTPUT "${name}.cpp"
-        COMMAND 
-            "$ENV{CMDSTAN}/bin/stanc"
-                --include-paths ${CMAKE_CURRENT_SOURCE_DIR}
-                ${stan_file} --name model --O1 --o "${name}.cpp"
-        COMMAND
-            sed -i 's/model_namespace/${name}/g' "${name}.cpp"
-        COMMAND
-            sed -i 's/using stan_model = .\\+\;//' "${name}.cpp"
-        COMMAND
-            sed -i 's/stan_model/${name}::model/g' "${name}.cpp"
-        COMMAND
-            sed -i 's/new_model/new_${name}/g' "${name}.cpp"
-        COMMAND
-            sed
-                -i 's/get_stan_profile_data/get_stan_profile_data_${name}/g'
-                "${name}.cpp"
-        DEPENDS ${stan_file})
-    list(APPEND source_files "${name}.cpp")
-    
-    configure_file(model.h.in "${name}.h")
-    list(APPEND header_files "${name}.h")
-endforeach()
 
 pybind11_add_module(_slimp ${source_files} ${header_files})
 target_compile_options(_slimp PUBLIC "SHELL:${STAN_CXXFLAGS}")

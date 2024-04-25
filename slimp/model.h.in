@@ -1,5 +1,0 @@
-#include <stan/model/model_header.hpp>
-
-stan::model::model_base & new_@name@(
-    stan::io::var_context & data_context, unsigned int seed,
-    std::ostream * msg_stream);
