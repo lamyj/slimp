@@ -37,7 +37,7 @@ ArrayWriter
         throw std::runtime_error(
             "Shape mismatch (state): expected "
             + std::to_string(this->_array.shape(2)-this->_offset)
-            + " got " + std::to_string(state.size()));
+            + " got " + std::to_string(state.size()-this->_skip));
     }
     
     auto source = state.begin()+this->_skip;
