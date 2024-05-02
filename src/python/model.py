@@ -2,7 +2,8 @@ import formulaic
 import numpy
 import pandas
 
-from . import _slimp, action_parameters
+from . import _slimp, action_parameters, sample_data_as_df, stats
+from .misc import sample_data_as_df
 from .model_data import ModelData
 from .samples import Samples
 
@@ -88,62 +89,21 @@ class Model:
     
     @property
     def hmc_diagnostics(self):
-        data = (
-            self._samples.diagnostics.groupby("chain__")
-            .agg(
-                divergent=("divergent__", lambda x: numpy.sum(x!=0)),
-                depth_exceeded=(
-                    "treedepth__", lambda x: numpy.sum(
-                        x >= self._sampler_parameters.hmc.max_depth)),
-                e_bfmi=(
-                    "energy__", 
-                    lambda x: (
-                        numpy.sum(numpy.diff(x)**2)
-                        / numpy.sum((x-numpy.mean(x))**2)))))
-        data.index = data.index.rename("chain").astype(int)
-        return data
+        return stats.hmc_diagnostics(
+            self._samples.diagnostics, self._sampler_parameters.hmc.max_depth)
     
     def sample(self):
         data = getattr(_slimp, f"{self._model_name}_sampler")(
             self._model_data.fit_data, self._sampler_parameters)
         self._samples = Samples(
-            self._get_df(data["array"], data["columns"]),
+            sample_data_as_df(data),
             self._model_data.predictor_mapper, data["parameters_columns"])
         self._generated_quantities = {}
     
     def summary(self, percentiles=(5, 50, 95)):
-        lp = self._samples.samples["lp__"].values
-        draws = self._samples.draws.values
-        
-        summary = numpy.empty((1+draws.shape[1], 5+len(percentiles)))
-        
-        measures = [
-            (numpy.mean, 0, ()),
-            (numpy.std, 2, ()),
-            (
-                lambda *args, **kwargs: numpy.quantile(*args, **kwargs).T,
-                slice(3, 3+len(percentiles)), (numpy.array(percentiles)/100, ))]
-        
-        for f, c, args in measures:
-            summary[0, c] = f(lp, *args)
-            summary[1:, c] = f(draws, *args, axis=0)
-        
-        measures = [
-            (_slimp.get_effective_sample_size, -2),
-            (_slimp.get_potential_scale_reduction, -1)]
-        for f, c in measures:
-            summary[0, c] = f(lp, self._sampler_parameters.num_chains)
-            summary[1:, c] = f(draws, self._sampler_parameters.num_chains)
-        
-        summary[:, 1] = numpy.sqrt(summary[:, 2])/numpy.sqrt(summary[:, -2])
-        
-        return pandas.DataFrame(
-            summary,
-            columns=[
-                "Mean", "MCSE", "StdDev",
-                *[f"{p}%" for p in percentiles],
-                "N_Eff", "R_hat"],
-            index=["lp__", *self._samples.draws.columns])
+        return stats.summary(
+            self._samples.samples[["lp__"]].join(self._samples.draws),
+            self._sampler_parameters.num_chains)
     
     def predict(self, data):
         data = data.astype({
@@ -153,10 +113,6 @@ class Model:
         draws = self._generate_quantities(
             "predict_posterior", predictors.shape[0], predictors.values)
         return draws.filter(like="mu"), draws.filter(like="y")
-    
-    def _get_df(self, data, names):
-        return pandas.DataFrame(
-            data.reshape(-1, data.shape[-1], order="A"), columns=names)
     
     def _generate_quantities(self, name, N_new=None, X_new=None):
         if N_new is None:
@@ -172,7 +128,7 @@ class Model:
             # NOTE: must only include model parameters
             self._samples.samples[self._samples.parameters_columns].values,
             parameters)
-        return self._get_df(data["array"], data["columns"])
+        return sample_data_as_df(data)
     
     def __getstate__(self):
         return {
