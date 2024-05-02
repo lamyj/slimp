@@ -34,6 +34,9 @@
     REGISTER_GQ(name, predict_posterior); \
     REGISTER_GQ(name, predict_prior);
 
+#define SET_FROM_KWARGS(kwargs, name, object, type) \
+    if(kwargs.contains(#name)) { object.name = kwargs[#name].cast<type>(); }
+
 PYBIND11_MODULE(_slimp, module)
 {
     auto action_parameters_ = module.def_submodule("action_parameters");
@@ -71,6 +74,19 @@ PYBIND11_MODULE(_slimp, module)
         });
     pybind11::class_<action_parameters::Adapt>(action_parameters_, "Adapt")
         .def(pybind11::init<>())
+        .def(pybind11::init(
+            [](pybind11::kwargs kwargs) {
+                action_parameters::Adapt x;
+                SET_FROM_KWARGS(kwargs, engaged, x, bool)
+                SET_FROM_KWARGS(kwargs, gamma, x, double)
+                SET_FROM_KWARGS(kwargs, delta, x, double)
+                SET_FROM_KWARGS(kwargs, kappa, x, double)
+                SET_FROM_KWARGS(kwargs, t0, x, double)
+                SET_FROM_KWARGS(kwargs, init_buffer, x, unsigned int)
+                SET_FROM_KWARGS(kwargs, term_buffer, x, unsigned int)
+                SET_FROM_KWARGS(kwargs, window, x, unsigned int)
+                SET_FROM_KWARGS(kwargs, save_metric, x, bool)
+                return x;}))
         .def_readwrite("engaged", &action_parameters::Adapt::engaged)
         .def_readwrite("gamma", &action_parameters::Adapt::gamma)
         .def_readwrite("delta", &action_parameters::Adapt::delta)
@@ -105,6 +121,14 @@ PYBIND11_MODULE(_slimp, module)
         });
     pybind11::class_<action_parameters::HMC>(action_parameters_, "HMC")
         .def(pybind11::init<>())
+        .def(pybind11::init(
+            [](pybind11::kwargs kwargs) {
+                action_parameters::HMC x;
+                SET_FROM_KWARGS(kwargs, int_time, x, double)
+                SET_FROM_KWARGS(kwargs, max_depth, x, int)
+                SET_FROM_KWARGS(kwargs, stepsize, x, double)
+                SET_FROM_KWARGS(kwargs, stepsize_jitter, x, double)
+                return x;}))
         .def_readwrite("int_time", &action_parameters::HMC::int_time)
         .def_readwrite("max_depth", &action_parameters::HMC::max_depth)
         .def_readwrite("stepsize", &action_parameters::HMC::stepsize)
@@ -114,6 +138,21 @@ PYBIND11_MODULE(_slimp, module)
     
     pybind11::class_<action_parameters::Sample>(action_parameters_, "Sample")
         .def(pybind11::init<>())
+        .def(pybind11::init(
+            [](pybind11::kwargs kwargs) {
+                action_parameters::Sample x;
+                SET_FROM_KWARGS(kwargs, num_samples, x, int)
+                SET_FROM_KWARGS(kwargs, num_warmup, x, int)
+                SET_FROM_KWARGS(kwargs, save_warmup, x, bool)
+                SET_FROM_KWARGS(kwargs, thin, x, int)
+                SET_FROM_KWARGS(kwargs, adapt, x, action_parameters::Adapt)
+                SET_FROM_KWARGS(kwargs, hmc, x, action_parameters::HMC)
+                SET_FROM_KWARGS(kwargs, num_chains, x, size_t)
+                SET_FROM_KWARGS(kwargs, seed, x, long)
+                SET_FROM_KWARGS(kwargs, id, x, int)
+                SET_FROM_KWARGS(kwargs, init_radius, x, double)
+                SET_FROM_KWARGS(kwargs, refresh, x, int)
+                return x;}))
         .def_readwrite("num_samples", &action_parameters::Sample::num_samples)
         .def_readwrite("num_warmup", &action_parameters::Sample::num_warmup)
         .def_readwrite("save_warmup", &action_parameters::Sample::save_warmup)
@@ -162,6 +201,12 @@ PYBIND11_MODULE(_slimp, module)
     pybind11::class_<action_parameters::GenerateQuantities>(
             action_parameters_, "GenerateQuantities")
         .def(pybind11::init<>())
+        .def(pybind11::init(
+            [](pybind11::kwargs kwargs) {
+                action_parameters::GenerateQuantities x;
+                SET_FROM_KWARGS(kwargs, num_chains, x, size_t)
+                SET_FROM_KWARGS(kwargs, seed, x, long)
+                return x;}))
         .def_readwrite(
             "num_chains", &action_parameters::GenerateQuantities::num_chains)
         .def_readwrite("seed", &action_parameters::GenerateQuantities::seed);

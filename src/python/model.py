@@ -13,9 +13,8 @@ class Model:
         self._model_data = ModelData(formula, data)
         
         if sampler_parameters is None:
-            self._sampler_parameters = action_parameters.Sample()
-            self._sampler_parameters.seed = seed
-            self._sampler_parameters.num_chains = num_chains
+            self._sampler_parameters = action_parameters.Sample(
+                seed=seed, num_chains=num_chains)
         else:
             self._sampler_parameters = sampler_parameters
         
@@ -119,9 +118,9 @@ class Model:
             N_new = self._model_data.fit_data["N"]
             X_new = self._model_data.fit_data["X"]
         
-        parameters = action_parameters.GenerateQuantities()
-        parameters.seed = self._sampler_parameters.seed
-        parameters.num_chains = self._sampler_parameters.num_chains
+        parameters = action_parameters.GenerateQuantities(
+            seed=self._sampler_parameters.seed,
+            num_chains=self._sampler_parameters.num_chains)
         
         data = getattr(_slimp, f"{self._model_name}_{name}")( 
             self.fit_data | { "N_new": N_new, "X_new": X_new},
