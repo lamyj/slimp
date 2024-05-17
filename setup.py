@@ -25,9 +25,9 @@ class BuildCMake(setuptools.Command, setuptools.command.build.SubCommand):
         
     def finalize_options(self):
         self.sources = [
-            *sorted(glob.glob(f"slimp/*.stan")),
-            *sorted(glob.glob(f"slimp/*.h")),
-            *sorted(glob.glob(f"slimp/*.cpp"))]
+            *sorted(glob.glob(f"src/stan/*")),
+            *sorted(glob.glob(f"src/lib/slimp/*")),
+            *sorted(glob.glob(f"src/python/*.cpp"))]
         self.set_undefined_options("build_py", ("build_lib", "build_lib"))
     
     def run(self):
@@ -42,7 +42,8 @@ class BuildCMake(setuptools.Command, setuptools.command.build.SubCommand):
             
             subprocess.check_call(
                 [
-                    "cmake", "--build", build_dir, "--target", "_slimp",
+                    "cmake", "--build", build_dir,
+                    "--target", "libslimp", "--target", "pyslimp",
                     "--config", "Release", "--parallel"])
     
     def get_source_files(self):
@@ -83,7 +84,8 @@ setuptools.setup(
     
     cmdclass={"build_cmake": BuildCMake},
 
-    packages=["slimp"],
+    packages=setuptools.find_packages(where="src/python"),
+    package_dir={"": "src/python"},
     
     install_requires=[
         "formulaic",

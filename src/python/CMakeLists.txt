@@ -14,7 +14,9 @@ execute_process(
     OUTPUT_VARIABLE PYTHON_SITE_PACKAGES
     OUTPUT_STRIP_TRAILING_WHITESPACE)
 
-set(compile_helper ${Python_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/compile.py)
+set(
+    compile_helper
+    ${Python_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/slimp/compile.py)
 
 set(STAN_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../stan")
 

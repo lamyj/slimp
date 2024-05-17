@@ -19,20 +19,12 @@ jobs:
       - name: Setup Micromamba
         uses: mamba-org/setup-micromamba@v1
         with:
-          init-shell: bash powershell
+          init-shell: bash
           environment-name: slimp
           create-args: python=3.11
       
       - name: Checkout latest revision
-        # Only the latest revision is required, as later steps do not depend on
-        # tags.
-        run: |
-          git config --global init.defaultBranch master
-          git config --global --add safe.directory '*'
-          git init .
-          git remote add origin ${{ github.server_url }}/${{ github.repository }}
-          git fetch origin --depth=1 ${{ github.ref }}
-          git checkout ${{ github.ref_name }}
+        uses: actions/checkout@v4
       
       - name: Set-up
         run: python .ci/build/conda.py ${{ env.MAMBA_EXE }}
@@ -48,4 +40,4 @@ jobs:
       - name: Post build
         run: |
           python -m pip install dist/*.whl
-          cd / && python -c "import slimp"
+          python -m unittest discover -s tests
