@@ -1,10 +1,23 @@
 #include "Logger.h"
 
+#include <map>
 #include <mutex>
 #include <string>
 #include <sstream>
 #include <pybind11/pybind11.h>
 #include <stan/callbacks/logger.hpp>
+
+#include <iostream>
+
+Logger
+::Logger()
+{
+    auto logging = pybind11::module::import("logging");
+    for(auto && level: {"debug", "info", "warning", "error", "critical"})
+    {
+        this->_loggers[level] = pybind11::getattr(logging, level);
+    }
+}
 
 void
 Logger
@@ -85,12 +98,9 @@ Logger
         return;
     }
     
-    // std::lock_guard<std::mutex> guard(this->_mutex);
-    // 
-    // FIXME: need to synchronize 
-    // pybind11::gil_scoped_acquire gil;
-    // 
-    // auto logging = pybind11::module::import("logging");
-    // auto logger = pybind11::getattr(logging, level.c_str());
+    std::lock_guard<std::mutex> guard(this->_mutex);
+    
+    // auto logger = pybind11::getattr(this->_logging, level.c_str());
     // logger(message);
+    this->_loggers.at(level)(message);
 }
