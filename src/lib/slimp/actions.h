@@ -24,7 +24,7 @@
  *         "parameters_columns")
  */
 template<typename Model>
-pybind11::dict sample(
+pybind11::dict SLIMP_API sample(
     pybind11::dict data, action_parameters::Sample const & parameters);
 
 /**
