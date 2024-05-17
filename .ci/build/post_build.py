@@ -33,7 +33,7 @@ python_tests_return_code = subprocess.call(
 # Build and run custom model
 custom_model_example = os.path.join(workspace, "custom_model_example")
 
-custom_model_example_build = os.path.join(custom_model_example, "build")
+custom_model_example_build = os.path.join(build_dir, "custom_model_example")
 if not os.path.isdir(custom_model_example_build):
     os.mkdir(custom_model_example_build)
 
@@ -44,17 +44,18 @@ python_tests_return_code = max(
             "cmake", "-G", "Ninja", f"-DPython_EXECUTABLE={sys.executable}",
             custom_model_example],
         cwd=custom_model_example_build,
-        env=os.environ | {
+        env=environment | {
             "CXXFLAGS": f"-I{install_dir}/include",
             "LDFLAGS": f"-L{install_dir}/lib"}))
 python_tests_return_code = max(
     python_tests_return_code,
     subprocess.call(
         ["cmake", "--build", ".", "--parallel", "--verbose"],
-        cwd=custom_model_example_build))
+        cwd=custom_model_example_build, env=environment))
 python_tests_return_code = max(
     python_tests_return_code,
     subprocess.call(
-        [sys.executable, "../run_model.py"], cwd=custom_model_example_build))
+        [sys.executable, f"{custom_model_example}/run_model.py"],
+        cwd=custom_model_example_build, env=environment))
 
 sys.exit(python_tests_return_code)
