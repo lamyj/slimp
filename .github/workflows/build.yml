@@ -1,0 +1,56 @@
+name: Build
+on: push
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    container: ${{ matrix.container }}
+    name: ${{ matrix.container || matrix.os }}/${{ matrix.packaging }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: "ubuntu-latest", container: "debian:bookworm", packaging: "apt", python: "python3" }
+          - { os: "ubuntu-latest", container: "ubuntu:noble", packaging: "apt", python: "python3" }
+          - { os: "ubuntu-latest", packaging: "conda", python: "python" }
+    env:
+      WORKSPACE: "${{ github.workspace }}"
+    defaults:
+      run:
+        shell: ${{ contains(matrix.os, 'windows') && 'pwsh' || 'bash -l {0}' }}
+    steps:
+      - name: Provision (Debian, Ubuntu)
+        # Install Python and Git. macOS workers already have this, however for
+        # Linux we are running in minimal containers.
+        run: |
+          apt-get update
+          DEBIAN_FRONTEND=noninteractive apt-get install -y git python3
+        if: ${{ contains(matrix.packaging, 'apt') }}
+      
+      - name: Provision (Micromamba)
+        uses: mamba-org/setup-micromamba@v1
+        with:
+          init-shell: bash
+          environment-name: slimp
+          create-args: python=3.11
+        if: ${{ contains(matrix.packaging, 'conda') }}
+      
+      - name: Set CmdStan environment
+        run: echo "CMDSTAN=${CONDA_PREFIX}/bin/cmdstan" >> ${GITHUB_ENV}
+        if: ${{ contains(matrix.packaging, 'conda') }}
+      
+      - name: Set CmdStan environment
+        run: echo "CMDSTAN=${HOME}/cmdstan" >> ${GITHUB_ENV}
+        if: ${{ contains(matrix.packaging, 'apt') }}
+      
+      - name: Checkout latest revision
+        uses: actions/checkout@v4
+      
+      - name: Set-up (${{ matrix.packaging }})
+        run: ${{ matrix.python }} .ci/build/${{ matrix.packaging }}.py
+      
+      - name: Build
+        run: ${{ matrix.python }} ./.ci/build/build.py
+              
+      - name: Run tests
+        run: ${{ matrix.python }} ./.ci/build/post_build.py
