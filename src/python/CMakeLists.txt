@@ -60,9 +60,13 @@ target_include_directories(
     "$ENV{CMDSTAN}/stan/src" "$ENV{CMDSTAN}/stan/lib/stan_math")
 
 target_link_libraries(
-    pyslimp PUBLIC
-        Boost::boost Eigen3::Eigen Python::NumPy SUNDIALS::generic TBB::tbb
-        libslimp)
+    pyslimp PUBLIC Boost::boost Eigen3::Eigen Python::NumPy TBB::tbb libslimp)
+
+if("${SUNDIALS_VERSION}" VERSION_GREATER_EQUAL "7.0.0")
+    target_link_libraries(libslimp PUBLIC SUNDIALS::core)
+else()
+    target_link_libraries(libslimp PUBLIC SUNDIALS::generic)
+endif()
 
 set_target_properties(
     pyslimp PROPERTIES 
