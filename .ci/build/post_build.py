@@ -32,7 +32,11 @@ python_tests_return_code = subprocess.call(
 
 # Build and run custom model
 custom_model_example = os.path.join(workspace, "custom_model_example")
+
 custom_model_example_build = os.path.join(custom_model_example, "build")
+if not os.path.isdir(custom_model_example_build):
+    os.mkdir(custom_model_example_build)
+
 python_tests_return_code = max(
     python_tests_return_code,
     subprocess.call(
