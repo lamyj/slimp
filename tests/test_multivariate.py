@@ -1,3 +1,7 @@
+# NOTE: informational messages are logged at the ERROR level
+import logging
+logging.basicConfig(level=logging.CRITICAL)
+
 import os
 import pickle
 import unittest
