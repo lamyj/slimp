@@ -16,7 +16,6 @@ python_lib_dir = os.path.join(
 
 python_tests_dir = os.path.join(workspace, "tests")
 
-# C++ tests: only library path is needed
 environment = os.environ.copy()
 for name in ["DYLD_LIBRARY_PATH", "LD_LIBRARY_PATH"]:
     environment[name] = os.pathsep.join([
@@ -26,8 +25,32 @@ environment["PATH"] = os.pathsep.join([
 environment["PYTHONPATH"] = os.pathsep.join([
     python_lib_dir, *environment.get("PYTHONPATH", "").split(os.pathsep)])
 
+# Run unit tests
 python_tests_return_code = subprocess.call(
     [sys.executable, "-m", "unittest", "discover", "-s", python_tests_dir], 
     cwd=build_dir, env=environment)
+
+# Build and run custom model
+custom_model_example = os.path.join(workspace, "custom_model_example")
+custom_model_example_build = os.path.join(custom_model_example, "build")
+python_tests_return_code = max(
+    python_tests_return_code,
+    subprocess.call(
+        [
+            "cmake", "-G", "Ninja", f"-DPython_EXECUTABLE={sys.executable}",
+            custom_model_example],
+        cwd=custom_model_example_build,
+        env=os.environ | {
+            "CXXFLAGS": f"-I{install_dir}/include",
+            "LDFLAGS": f"-L{install_dir}/lib"}))
+python_tests_return_code = max(
+    python_tests_return_code,
+    subprocess.call(
+        ["cmake", "--build", ".", "--parallel", "--verbose"],
+        cwd=custom_model_example_build))
+python_tests_return_code = max(
+    python_tests_return_code,
+    subprocess.call(
+        [sys.executable, "../run_model.py"], cwd=custom_model_example_build))
 
 sys.exit(python_tests_return_code)
