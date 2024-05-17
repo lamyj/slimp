@@ -43,3 +43,5 @@ Plot the credible intervals of the parameters and their distributions:
 slimp.parameters_plot(model, include=["x", "y"])
 slimp.KDEPlot(model.draws["sigma"], prob=0.90)
 ```
+
+Use a custom Stan model: have a look [here](custom_model_example/README.md)
