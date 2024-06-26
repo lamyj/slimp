@@ -10,6 +10,8 @@
 #include "slimp/actions.h"
 #include "slimp/Factory.h"
 
+#include "multilevel_sampler.h"
+
 #include "multivariate_log_likelihood.h"
 #include "multivariate_predict_posterior.h"
 #include "multivariate_predict_prior.h"
@@ -213,6 +215,7 @@ PYBIND11_MODULE(_slimp, module)
         
     REGISTER_ALL(univariate);
     REGISTER_ALL(multivariate);
+    REGISTER_SAMPLER(multilevel);
     
     module.def("get_effective_sample_size", &get_effective_sample_size);
     module.def("get_potential_scale_reduction", &get_potential_scale_reduction);
