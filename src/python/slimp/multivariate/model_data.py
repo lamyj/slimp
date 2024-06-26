@@ -6,9 +6,6 @@ from .predictor_mapper import PredictorMapper
 
 class ModelData:
     def __init__(self, formula, data):
-        if isinstance(formula, str):
-            formula = [formula]
-        
         self.formula = formula
         self.data = data
         

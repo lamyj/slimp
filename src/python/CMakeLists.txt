@@ -46,7 +46,7 @@ endforeach()
 list(SORT header_files)
 list(SORT source_files)
 
-file(GLOB_RECURSE python_files "*.py")
+file(GLOB_RECURSE python_files "${CMAKE_CURRENT_SOURCE_DIR}/*.py")
 list(SORT python_files)
 
 pybind11_add_module(pyslimp ${source_files} ${header_files})
@@ -77,4 +77,8 @@ set_target_properties(
 
 install(DIRECTORY DESTINATION "${PYTHON_SITE_PACKAGES}")
 install(TARGETS pyslimp DESTINATION "${PYTHON_SITE_PACKAGES}/slimp")
-install(FILES ${python_files} DESTINATION "${PYTHON_SITE_PACKAGES}/slimp")
+
+install(
+    DIRECTORY .
+    DESTINATION ${CMAKE_INSTALL_PREFIX}/${PYTHON_SITE_PACKAGES}
+    FILES_MATCHING PATTERN *.py)

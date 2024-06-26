@@ -16,31 +16,17 @@ class PredictorMapper:
         index = 0
         for p, o in zip(unmodeled_predictors, self._outcomes.values()):
             for name in p.filter(regex="^(?!Intercept)").columns:
-                self._beta[1+index] = (
-                    f"{o}/{name}" if len(self._outcomes)>1
-                    else name)
+                self._beta[1+index] = f"{o}/{name}"
                 index += 1
-        
-        self._Beta = {}
-        if modeled_predictors is not None:
-            self._group_name = modeled_predictors.index.name
-            self._groups = modeled_predictors.index.categories
-            index = 0
-            for name in modeled_predictors.columns:
-                self._Beta[1+index] = name
-                index += 1
-        
+    
     def __call__(self, x):
         if not isinstance(x, str):
             return [self.__call__(item) for item in x]
         
-        match = re.match("([^.]+)\.(\d+)(?:\.(\d+))?", x)
+        match = re.match("(.+)\.(\d+)", x)
         if match:
-            kind, a, b = match.groups()
-            if b is not None:
-                group, index = int(a), int(b)
-            else:
-                index = int(a)
+            kind, index = match.groups()
+            index = int(index)
         else:
             kind = x
             index = None
@@ -53,10 +39,6 @@ class PredictorMapper:
                 return name
         elif kind == "beta":
             return self._beta[index]
-        elif kind == "Beta":
-            coefficient = self._Beta[index]
-            group = self._groups[group-1]
-            return f"{self._group_name}[{group}]/{coefficient}"
         elif kind.endswith("_") and not kind.endswith("__"):
             return f"{kind[:-1]}[{index}]"
         else:

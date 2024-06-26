@@ -4,23 +4,29 @@ import pandas
 
 from . import _slimp, action_parameters, sample_data_as_df, stats
 from .misc import sample_data_as_df
-from .model_data import ModelData
 from .samples import Samples
+
+from . import multilevel, multivariate, univariate
 
 class Model:
     def __init__(
             self, formula, data, seed=-1, num_chains=1, sampler_parameters=None):
+        ModelData = None
+        if isinstance(formula, str):
+            ModelData = univariate.ModelData
+        elif isinstance(formula, list):
+            if len(formula) == 2 and isinstance(formula[1], tuple):
+                ModelData = multilevel.ModelData
+            else:
+                ModelData = multivariate.ModelData
         self._model_data = ModelData(formula, data)
+        self._model_name = ModelData.__module__.split(".")[1]
         
         if sampler_parameters is None:
             self._sampler_parameters = action_parameters.Sample(
                 seed=seed, num_chains=num_chains)
         else:
             self._sampler_parameters = sampler_parameters
-        
-        self._model_name = (
-            "multivariate" if len(self._model_data.formula)>1
-            else "univariate")
         
         self._samples = None
         self._generated_quantities = {}
