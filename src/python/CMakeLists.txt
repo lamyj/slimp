@@ -25,22 +25,39 @@ file(
     "${STAN_SOURCE_DIR}/*_sampler.stan"
     "${STAN_SOURCE_DIR}/*_log_likelihood.stan"
     "${STAN_SOURCE_DIR}/*_predict_prior.stan"
-    "${STAN_SOURCE_DIR}/*_predict_posterior.stan")
+    "${STAN_SOURCE_DIR}/*_predict_posterior.stan"
+    
+    "${STAN_SOURCE_DIR}/*/sampler.stan"
+    "${STAN_SOURCE_DIR}/*/log_likelihood.stan"
+    "${STAN_SOURCE_DIR}/*/predict_prior.stan"
+    "${STAN_SOURCE_DIR}/*/predict_posterior.stan")
 list(SORT stan_files)
 
 file(GLOB_RECURSE header_files "*.h")
 file(GLOB_RECURSE source_files "*.cpp")
 
 foreach(stan_file ${stan_files})
-    get_filename_component(root "${stan_file}" NAME_WE)
-    
-    add_custom_command(
-        OUTPUT "${root}.h"
-        COMMAND
-            ${compile_helper} compile -I ${STAN_SOURCE_DIR}
-                ${stan_file} "${root}.h"
-        DEPENDS ${stan_file})
-    list(APPEND header_files "${CMAKE_CURRENT_BINARY_DIR}/${root}.h")
+    file(RELATIVE_PATH relative_stan_path "${STAN_SOURCE_DIR}" "${stan_file}")
+    get_filename_component(relative_stan_dir "${relative_stan_path}" DIRECTORY)
+    get_filename_component(name "${relative_stan_path}" NAME_WE)
+    set(header "${CMAKE_CURRENT_BINARY_DIR}/${relative_stan_dir}/${name}.h")
+    if(NOT "${relative_stan_dir}" STREQUAL "")
+        add_custom_command(
+            OUTPUT "${header}"
+            COMMAND
+                ${compile_helper} compile -I ${STAN_SOURCE_DIR}
+                    -p "${relative_stan_dir}_"
+                    ${stan_file} "${header}"
+            DEPENDS ${stan_file})
+    else()
+        add_custom_command(
+            OUTPUT "${header}"
+            COMMAND
+                ${compile_helper} compile -I ${STAN_SOURCE_DIR}
+                    ${stan_file} "${header}"
+            DEPENDS ${stan_file})
+    endif()
+    list(APPEND header_files "${header}")
 endforeach()
 
 list(SORT header_files)

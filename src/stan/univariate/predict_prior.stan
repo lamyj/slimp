@@ -36,7 +36,7 @@ transformed data
     matrix[N_new, K-1] X_c_new = center(X_new, X_bar, N_new, K);
 }
 
-#include univariate_parameters.stan
+#include univariate/parameters.stan
 
 generated quantities
 {

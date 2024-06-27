@@ -23,7 +23,7 @@ transformed data
     matrix[N, K-1] X_c = center(X, X_bar, N, K);
 }
 
-#include univariate_parameters.stan
+#include univariate/parameters.stan
 
 generated quantities
 {

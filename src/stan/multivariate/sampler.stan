@@ -77,7 +77,7 @@ transformed data
     }
 }
  
-#include multivariate_parameters.stan
+#include multivariate/parameters.stan
 
 model
 {

@@ -10,17 +10,17 @@
 #include "slimp/actions.h"
 #include "slimp/Factory.h"
 
-#include "multilevel_sampler.h"
+#include "multilevel/sampler.h"
 
-#include "multivariate_log_likelihood.h"
-#include "multivariate_predict_posterior.h"
-#include "multivariate_predict_prior.h"
-#include "multivariate_sampler.h"
+#include "multivariate/log_likelihood.h"
+#include "multivariate/predict_posterior.h"
+#include "multivariate/predict_prior.h"
+#include "multivariate/sampler.h"
 
-#include "univariate_log_likelihood.h"
-#include "univariate_predict_posterior.h"
-#include "univariate_predict_prior.h"
-#include "univariate_sampler.h"
+#include "univariate/log_likelihood.h"
+#include "univariate/predict_posterior.h"
+#include "univariate/predict_prior.h"
+#include "univariate/sampler.h"
 
 #define REGISTER_SAMPLER(name) \
     module.def(\

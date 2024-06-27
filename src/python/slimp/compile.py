@@ -7,8 +7,10 @@ import sys
 import tempfile
 import textwrap
 
-def compile(stan_file, h_file, include_path=None):
+def compile(stan_file, h_file, include_path=None, prefix=None):
     name = os.path.splitext(os.path.basename(stan_file))[0]
+    if prefix:
+        name = f"{prefix}{name}"
     
     subprocess.check_call([
         f"{os.environ['CMDSTAN']}/bin/stanc",
@@ -69,6 +71,7 @@ def main():
         parser.add_argument("stan_file")
         parser.add_argument("h_file")
         parser.add_argument("--include-path", "-I")
+        parser.add_argument("--prefix", "-p")
         arguments = parser.parse_args(sys.argv[2:])
         compile(**vars(arguments))
     elif command == "info":
