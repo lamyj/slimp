@@ -34,4 +34,9 @@ class ModelData:
                 [2.5*(sy/sx) for sx, sy in zip(sigma_X, sigma_y)])),
             "lambda_sigma": numpy.squeeze(1/sigma_y),
             "eta_L": 1.0}
+    
+    def new_data(self, X_new=None):
+        if X_new is None:
+            X_new = self.fit_data["X"]
         
+        return self.fit_data | { "N_new": X_new.shape[0], "X_new": X_new}

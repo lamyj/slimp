@@ -116,20 +116,17 @@ class Model:
         predictors = pandas.DataFrame(
             formulaic.model_matrix(self.formula.split("~")[1], data))
         draws = self._generate_quantities(
-            "predict_posterior", predictors.shape[0], predictors.values)
+            "predict_posterior", predictors.values)
         return draws.filter(like="mu"), draws.filter(like="y")
     
-    def _generate_quantities(self, name, N_new=None, X_new=None):
-        if N_new is None:
-            N_new = self._model_data.fit_data["N"]
-            X_new = self._model_data.fit_data["X"]
-        
+    def _generate_quantities(self, name, *args, **kwargs):
+        new_data = self._model_data.new_data(*args, **kwargs)
         parameters = action_parameters.GenerateQuantities(
             seed=self._sampler_parameters.seed,
             num_chains=self._sampler_parameters.num_chains)
         
         data = getattr(_slimp, f"{self._model_name}_{name}")( 
-            self.fit_data | { "N_new": N_new, "X_new": X_new},
+            new_data,
             # NOTE: must only include model parameters
             self._samples.samples[self._samples.parameters_columns].values,
             parameters)

@@ -42,4 +42,12 @@ class ModelData:
             
             "lambda_sigma_y": 1/sigma_y,
             "lambda_sigma_Beta": 1/sigma_y}
+    
+    def new_data(self, X0_new=None, X_new=None):
+        if X0_new is None:
+            X0_new = self.fit_data["X0"]
+        if X_new is None:
+            X_new = self.fit_data["X"]
         
+        return self.fit_data | {
+            "N_new": X0_new.shape[0], "X0_new": X0_new, "X_new": X_new}

@@ -25,4 +25,9 @@ class ModelData:
             "mu_alpha": mu_y, "sigma_alpha": 2.5*sigma_y,
             "sigma_beta": 2.5*sigma_y/sigma_X,
             "lambda_sigma": numpy.squeeze(1/sigma_y)}
+    
+    def new_data(self, X_new=None):
+        if X_new is None:
+            X_new = self.fit_data["X"]
         
+        return self.fit_data | { "N_new": X_new.shape[0], "X_new": X_new}
