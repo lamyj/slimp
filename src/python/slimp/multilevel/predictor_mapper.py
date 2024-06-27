@@ -46,6 +46,8 @@ class PredictorMapper:
             coefficient = self._Beta[index]
             group = self._groups[group-1]
             return f"{self._group_name}[{group}]/{coefficient}"
+        elif kind == "Sigma_Beta":
+            return f"{kind}[{self._Beta[group]}, {self._Beta[index]}]"
         elif kind.endswith("_") and not kind.endswith("__"):
             return f"{kind[:-1]}[{index}]"
         else:
