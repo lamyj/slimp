@@ -108,7 +108,8 @@ class Model:
     def summary(self, percentiles=(5, 50, 95)):
         return stats.summary(
             self._samples.samples[["lp__"]].join(self._samples.draws),
-            self._sampler_parameters.num_chains)
+            self._sampler_parameters.num_chains,
+            percentiles)
     
     def predict(self, data):
         data = data.astype({
