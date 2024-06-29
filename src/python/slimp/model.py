@@ -43,9 +43,7 @@ class Model:
     
     @property
     def predictors(self):
-        return (
-            self._model_data.predictors if len(self._model_data.formula)>1
-            else self._model_data.predictors[0])
+        return self._model_data.predictors
     
     @property
     def outcomes(self):

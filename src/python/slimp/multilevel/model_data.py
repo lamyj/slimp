@@ -43,6 +43,10 @@ class ModelData:
             "lambda_sigma_y": 1/sigma_y,
             "lambda_sigma_Beta": 1/sigma_y}
     
+    @property
+    def predictors(self):
+        return (self.unmodeled_predictors, self.modeled_predictors)
+    
     def new_data(self, X0_new=None, X_new=None):
         if X0_new is None:
             X0_new = self.fit_data["X0"]
