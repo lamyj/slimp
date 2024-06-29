@@ -21,6 +21,18 @@ data
     // Map from an observation to its group
     array[N] int<lower=1, upper=J> group;
     
+    // Location and scale of the intercept prior
+    real mu_alpha, sigma_alpha;
+    
+    // Scale of the non-intercept unmodeled coefficients priors (location is 0)
+    vector<lower=0>[K0-1] sigma_beta;
+    
+    // Scale of the individual-level variance prior
+    real<lower=0> lambda_sigma_y;
+    
+    // Scale of the group-level variance prior
+    real<lower=0> lambda_sigma_Beta;
+    
     // Number of new outcomes to predict
     int<lower=0> N_new;
     // New predictors
@@ -35,6 +47,8 @@ transformed data
     matrix[N, K0-1] X0_c = center(X0, X0_bar, N, K0);
     matrix[N_new, K0-1] X0_c_new = center(X0_new, X0_bar, N_new, K0);
     
+    vector[K] zeros_K = zeros_vector(K);
+    
     // Final number of observations to generate.
     int N_final = (N_new>0)?N_new:N;
 }
@@ -46,17 +60,22 @@ generated quantities
     // Expected value and draws of the posterior predictive distribution
     vector[N_final] mu, y;
     {
+        real alpha_c_ = student_t_rng(3, mu_alpha, sigma_alpha);
+        vector[K0-1] beta_0_ = to_vector(student_t_rng(3, 0, sigma_beta));
+        real sigma_y_ = exponential_rng(lambda_sigma_y);
+        
+        vector[K] sigma_Beta_ = to_vector(
+            exponential_rng(lambda_sigma_Beta * ones_vector(K)));
+    
+        matrix[K, K] L_Omega_Beta_ = lkj_corr_cholesky_rng(K, 2);
+        
         // Part of the posterior predicted expectation related to unmodeled
         // predictors.
-        vector[N_final] mu_0 = alpha_c + ((N_new > 0)?X0_c_new:X0_c) * beta;
+        vector[N_final] mu_0 = alpha_c_ + ((N_new > 0)?X0_c_new:X0_c) * beta_0_;
         
         // Part of the posterior predicted expectation related to modeled
-        // predictors
-        vector[N_final] mu_1;
-        for(n in 1:N_final)
-        {
-            mu_1[n] = ((N_new > 0)?X_new[n, :]:X[n, :]) * Beta[group[n]];
-        }
+        // predictors. The expected value is 0.
+        vector[N_final] mu_1 = zeros_vector(N_final);
         
         mu = mu_0 + mu_1;
         
@@ -64,19 +83,22 @@ generated quantities
         // variance and Cholesky-factored correlation
         matrix[K, K] Sigma_Beta;
         {
-            matrix[K, K] sigma_L = diag_pre_multiply(sigma_Beta, L_Omega_Beta);
+            matrix[K, K] sigma_L = diag_pre_multiply(sigma_Beta_, L_Omega_Beta_);
             Sigma_Beta = sigma_L *  sigma_L';
         }
         
         // Part of the posterior predicted value related to modeled predictors
-        array[J] vector[K] B = multi_normal_rng(Beta, Sigma_Beta);
+        array[J] vector[K] Beta_;
+        for(j in 1:J)
+        {
+            Beta_[j] = multi_normal_rng(zeros_K, Sigma_Beta);
+        }
         vector[N_final] y_1;
         for(n in 1:N_final)
         {
-            y_1[n] = ((N_new > 0)?X_new[n, :]:X[n, :]) * B[group[n]];
+            y_1[n] = ((N_new > 0)?X_new[n, :]:X[n, :]) * Beta_[group[n]];
         }
         
         y = to_vector(normal_rng(mu_0 + y_1, sigma_y));
     }
-    
 }
