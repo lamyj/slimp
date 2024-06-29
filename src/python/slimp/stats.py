@@ -16,7 +16,9 @@ def r_squared(*args, **kwargs):
         raise NotImplementedError()
 
 def _r_squared_model(model):
-    if isinstance(model.formula, list):
+    if isinstance(model.formula, list) and isinstance(model.formula[1], tuple):
+        return r_squared(model.posterior_epred, model.draws["sigma_y"])
+    elif isinstance(model.formula, list):
         draws = model.draws
         epred = model.posterior_epred
         
