@@ -95,9 +95,10 @@ class Model:
         return stats.hmc_diagnostics(
             self._samples.diagnostics, self._sampler_parameters.hmc.max_depth)
     
-    def sample(self):
-        data = getattr(_slimp, f"{self._model_name}_sampler")(
-            self._model_data.fit_data, self._sampler_parameters)
+    def sample(self, sampler=None):
+        if sampler is None:
+            sampler = getattr(_slimp, f"{self._model_name}_sampler")
+        data = sampler(self._model_data.fit_data, self._sampler_parameters)
         self._samples = Samples(
             sample_data_as_df(data),
             self._model_data.predictor_mapper, data["parameters_columns"])
