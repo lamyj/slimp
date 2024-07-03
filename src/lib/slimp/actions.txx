@@ -36,6 +36,8 @@ template<typename Model>
 pybind11::dict sample(
     pybind11::dict data, action_parameters::Sample const & parameters)
 {
+    stan::math::init_threadpool_tbb();
+    
     VarContext var_context(data);
     
     Model model(var_context, parameters.seed, &std::cout);
@@ -94,20 +96,44 @@ pybind11::dict sample(
     std::vector<stan::callbacks::writer> diagnostic_writers(
         parameters.num_chains);
     
-    auto const return_code = stan::services::sample::hmc_nuts_diag_e_adapt(
-        model, parameters.num_chains, init_contexts, parameters.seed,
-        parameters.id, parameters.init_radius, parameters.num_warmup,
-        parameters.num_samples, parameters.thin, parameters.save_warmup,
-        parameters.refresh, parameters.hmc.stepsize,
-        parameters.hmc.stepsize_jitter, parameters.hmc.max_depth,
-        parameters.adapt.delta, parameters.adapt.gamma, parameters.adapt.kappa,
-        parameters.adapt.t0, parameters.adapt.init_buffer,
-        parameters.adapt.term_buffer, parameters.adapt.window, interrupt,
-        logger, init_writers, sample_writers, diagnostic_writers);
-    if(return_code != 0)
+    if(parameters.sequential_chains)
     {
-        throw std::runtime_error(
-            "Error while sampling: "+std::to_string(return_code));
+        for(std::size_t chain=0; chain!=parameters.num_chains; ++chain)
+        {
+            auto const return_code = stan::services::sample::hmc_nuts_diag_e_adapt(
+                model, *init_contexts[chain], parameters.seed,
+                chain, parameters.init_radius, parameters.num_warmup,
+                parameters.num_samples, parameters.thin, parameters.save_warmup,
+                parameters.refresh, parameters.hmc.stepsize,
+                parameters.hmc.stepsize_jitter, parameters.hmc.max_depth,
+                parameters.adapt.delta, parameters.adapt.gamma, parameters.adapt.kappa,
+                parameters.adapt.t0, parameters.adapt.init_buffer,
+                parameters.adapt.term_buffer, parameters.adapt.window, interrupt,
+                logger, init_writers[chain], sample_writers[chain], diagnostic_writers[chain]);
+            if(return_code != 0)
+            {
+                throw std::runtime_error(
+                    "Error while sampling: "+std::to_string(return_code));
+            }
+        }
+    }
+    else
+    {
+        auto const return_code = stan::services::sample::hmc_nuts_diag_e_adapt(
+            model, parameters.num_chains, init_contexts, parameters.seed,
+            parameters.id, parameters.init_radius, parameters.num_warmup,
+            parameters.num_samples, parameters.thin, parameters.save_warmup,
+            parameters.refresh, parameters.hmc.stepsize,
+            parameters.hmc.stepsize_jitter, parameters.hmc.max_depth,
+            parameters.adapt.delta, parameters.adapt.gamma, parameters.adapt.kappa,
+            parameters.adapt.t0, parameters.adapt.init_buffer,
+            parameters.adapt.term_buffer, parameters.adapt.window, interrupt,
+            logger, init_writers, sample_writers, diagnostic_writers);
+        if(return_code != 0)
+        {
+            throw std::runtime_error(
+                "Error while sampling: "+std::to_string(return_code));
+        }
     }
     
     auto names = sample_writers[0].names();
@@ -129,6 +155,8 @@ pybind11::dict generate_quantities(
     pybind11::dict data, Eigen::Ref<Eigen::MatrixXd> draws,
     action_parameters::GenerateQuantities const & parameters)
 {
+    stan::math::init_threadpool_tbb();
+    
     VarContext var_context(data);
     
     Model model(var_context, parameters.seed, &std::cout);
