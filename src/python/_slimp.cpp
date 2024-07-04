@@ -157,6 +157,7 @@ PYBIND11_MODULE(_slimp, module)
                 SET_FROM_KWARGS(kwargs, init_radius, x, double)
                 SET_FROM_KWARGS(kwargs, refresh, x, int)
                 SET_FROM_KWARGS(kwargs, sequential_chains, x, bool)
+                SET_FROM_KWARGS(kwargs, threads_per_chain, x, unsigned int)
                 return x;}))
         .def_readwrite("num_samples", &action_parameters::Sample::num_samples)
         .def_readwrite("num_warmup", &action_parameters::Sample::num_warmup)
@@ -171,6 +172,8 @@ PYBIND11_MODULE(_slimp, module)
         .def_readwrite("refresh", &action_parameters::Sample::refresh)
         .def_readwrite(
             "sequential_chains", &action_parameters::Sample::sequential_chains)
+        .def_readwrite(
+            "threads_per_chain", &action_parameters::Sample::threads_per_chain)
         .def(pybind11::pickle(
             [&](action_parameters::Sample const & self) {
                 pybind11::dict state;

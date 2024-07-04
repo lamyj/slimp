@@ -36,7 +36,15 @@ template<typename Model>
 pybind11::dict sample(
     pybind11::dict data, action_parameters::Sample const & parameters)
 {
-    stan::math::init_threadpool_tbb();
+    if(parameters.sequential_chains)
+    {
+        stan::math::init_threadpool_tbb(parameters.threads_per_chain);
+    }
+    else
+    {
+        stan::math::init_threadpool_tbb(
+            parameters.num_chains*parameters.threads_per_chain);
+    }
     
     VarContext var_context(data);
     
@@ -155,8 +163,8 @@ pybind11::dict generate_quantities(
     pybind11::dict data, Eigen::Ref<Eigen::MatrixXd> draws,
     action_parameters::GenerateQuantities const & parameters)
 {
-    stan::math::init_threadpool_tbb();
-    
+    // WARNING: threading is not initialized (the parameters are contained in
+    // action_parameters::Sample, not in action_parameters::GenerateQuantities)
     VarContext var_context(data);
     
     Model model(var_context, parameters.seed, &std::cout);

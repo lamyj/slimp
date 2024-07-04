@@ -45,7 +45,9 @@ public:
     int id = 1;
     double init_radius = 2;
     int refresh = 0;
+    
     bool sequential_chains = false;
+    unsigned int threads_per_chain = 1;
 };
 
 class SLIMP_API GenerateQuantities
