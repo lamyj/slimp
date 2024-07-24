@@ -72,6 +72,9 @@ data
     // Scale of the group-level variance prior
     real<lower=0> lambda_sigma_Beta;
     
+    // Parameter of the LKJ distribution
+    real<lower=1> eta_L;
+    
     // NOTE: additional groups can be added by renaming X (resp. group) to X1
     // (resp. group1) and by defining X2, X3, etc. (resp. group2, group3, etc.).
 }
@@ -114,7 +117,7 @@ model
     Beta ~ multi_normal(zeros_K, Sigma_Beta);
     sigma_Beta ~ exponential(lambda_sigma_Beta);
     
-    L_Omega_Beta ~ lkj_corr_cholesky(2);
+    L_Omega_Beta ~ lkj_corr_cholesky(eta_L);
 }
 
 generated quantities

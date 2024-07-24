@@ -33,6 +33,9 @@ data
     // Scale of the group-level variance prior
     real<lower=0> lambda_sigma_Beta;
     
+    // Parameter of the LKJ distribution
+    real<lower=1> eta_L;
+    
     // Number of new outcomes to predict
     int<lower=0> N_new;
     // New predictors
@@ -67,7 +70,7 @@ generated quantities
         vector[K] sigma_Beta_ = to_vector(
             exponential_rng(lambda_sigma_Beta * ones_vector(K)));
     
-        matrix[K, K] L_Omega_Beta_ = lkj_corr_cholesky_rng(K, 2);
+        matrix[K, K] L_Omega_Beta_ = lkj_corr_cholesky_rng(K, eta_L);
         
         // Part of the posterior predicted expectation related to unmodeled
         // predictors.

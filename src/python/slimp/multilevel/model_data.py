@@ -41,7 +41,9 @@ class ModelData:
             "sigma_beta": 2.5*sigma_y/sigma_X,
             
             "lambda_sigma_y": 1/sigma_y,
-            "lambda_sigma_Beta": 1/sigma_y}
+            "lambda_sigma_Beta": 1/sigma_y,
+            
+            "eta_L": 1.}
     
     @property
     def predictors(self):
