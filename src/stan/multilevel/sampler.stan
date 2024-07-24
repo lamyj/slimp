@@ -90,7 +90,30 @@ transformed data
 
 #include multilevel/parameters.stan
 
-transformed parameters
+model
+{
+    vector[N] X_Beta;
+    for(n in 1:N)
+    {
+        X_Beta[n] = X[n, :] * Beta[group[n]];
+    }
+    // NOTE: faster than y ~ normal(alpha_c+X0_c*beta + X_Beta, sigma_y)
+    y ~ normal_id_glm(X0_c, alpha_c + X_Beta, beta, sigma_y);
+    
+    alpha_c ~ student_t(3, mu_alpha, sigma_alpha);
+    beta ~ student_t(3, 0, sigma_beta);
+    sigma_y ~ exponential(lambda_sigma_y);
+    
+    // NOTE: supposedly faster than computing Sigma_Beta in transformed
+    // parameters and using Beta ~ multi_normal(zeros_K, Sigma_Beta)
+    Beta ~ multi_normal_cholesky(
+        zeros_K, diag_pre_multiply(sigma_Beta, L_Omega_Beta));
+    sigma_Beta ~ exponential(lambda_sigma_Beta);
+    
+    L_Omega_Beta ~ lkj_corr_cholesky(eta_L);
+}
+
+generated quantities
 {
     // Covariance matrix of group-level regression, reconstructed from variance
     // and Cholesky-factored correlation
@@ -99,29 +122,7 @@ transformed parameters
         matrix[K, K] sigma_L = diag_pre_multiply(sigma_Beta, L_Omega_Beta);
         Sigma_Beta = sigma_L *  sigma_L';
     }
-}
 
-model
-{
-    vector[N] X_Beta;
-    for(n in 1:N)
-    {
-        X_Beta[n] = X[n, :] * Beta[group[n]];
-    }
-    y ~ normal(alpha_c+X0_c*beta + X_Beta, sigma_y);
-    
-    alpha_c ~ student_t(3, mu_alpha, sigma_alpha);
-    beta ~ student_t(3, 0, sigma_beta);
-    sigma_y ~ exponential(lambda_sigma_y);
-    
-    Beta ~ multi_normal(zeros_K, Sigma_Beta);
-    sigma_Beta ~ exponential(lambda_sigma_Beta);
-    
-    L_Omega_Beta ~ lkj_corr_cholesky(eta_L);
-}
-
-generated quantities
-{
     // Non-centered intercept
     real alpha = alpha_c - dot_product(X0_bar, beta);
 }
