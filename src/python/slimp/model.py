@@ -111,10 +111,7 @@ class Model:
             percentiles)
     
     def predict(self, data):
-        data = data.astype({
-            k: v for k, v in self.data.dtypes.items() if k in data.columns})
-        predictors = pandas.DataFrame(
-            formulaic.model_matrix(self.formula.split("~")[1], data))
+        predictors = self._model_data.new_predictors(data)
         draws = self._generate_quantities(
             "predict_posterior", predictors.values)
         return draws.filter(like="mu"), draws.filter(like="y")

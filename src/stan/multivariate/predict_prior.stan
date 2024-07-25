@@ -77,6 +77,9 @@ transformed data
             X_c_new[, K_c_begin[r]:K_c_end[r]] = X_c_new_;
         }
     }
+    
+    // Final number of observations to generate.
+    int N_final = (N_new>0)?N_new:N;
 }
 
 #include multivariate/parameters.stan
@@ -84,7 +87,7 @@ transformed data
 generated quantities
 {
     // Expected value and draws of the prior predictive distribution
-    array[N] vector[R] mu, y;
+    array[N_final] vector[R] mu, y;
     
     {
         vector[R] alpha_c_ = to_vector(student_t_rng(3, mu_alpha, sigma_alpha));
@@ -95,7 +98,7 @@ generated quantities
         
         for(r in 1:R)
         {
-            matrix[(N_new > 0)?N_new:N, K_c[r]] X_c_ = 
+            matrix[N_final, K_c[r]] X_c_ = 
                 (N_new > 0)
                 ? X_c_new[, K_c_begin[r]:K_c_end[r]]
                 : X_c[, K_c_begin[r]:K_c_end[r]];
@@ -103,7 +106,7 @@ generated quantities
             vector[K_c[r]] beta_ =
                 to_vector(student_t_rng(3, 0, sigma_beta))[K_c_begin[r]:K_c_end[r]];
             
-            for(n in 1:N)
+            for(n in 1:N_final)
             {
                 mu[n, r] = alpha_c_[r] + dot_product(X_c_[n], beta_);
             }
@@ -111,4 +114,6 @@ generated quantities
         
         y = multi_normal_cholesky_rng(mu, Sigma);
     }
+    
+    
 }

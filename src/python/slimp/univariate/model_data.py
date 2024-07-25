@@ -26,6 +26,13 @@ class ModelData:
             "sigma_beta": 2.5*sigma_y/sigma_X,
             "lambda_sigma": numpy.squeeze(1/sigma_y)}
     
+    def new_predictors(self, data):
+        data = data.astype({
+            k: v for k, v in self.data.dtypes.items() if k in data.columns})
+        predictors = pandas.DataFrame(
+            formulaic.model_matrix(self.formula.split("~")[1], data))
+        return predictors
+    
     def new_data(self, X_new=None):
         if X_new is None:
             X_new = self.fit_data["X"]

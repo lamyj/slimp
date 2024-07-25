@@ -35,6 +35,17 @@ class ModelData:
             "lambda_sigma": numpy.squeeze(1/sigma_y),
             "eta_L": 1.0}
     
+    def new_predictors(self, data):
+        data = data.astype({
+            k: v for k, v in self.data.dtypes.items() if k in data.columns})
+        predictors = []
+        for formula in self.formula:
+            predictors.append(
+                formulaic.model_matrix(formula.split("~")[1], data))
+        predictors = pandas.concat(predictors, axis="columns")
+        return predictors
+        
+    
     def new_data(self, X_new=None):
         if X_new is None:
             X_new = self.fit_data["X"]

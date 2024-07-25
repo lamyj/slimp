@@ -77,6 +77,9 @@ transformed data
             X_c_new[, K_c_begin[r]:K_c_end[r]] = X_c_new_;
         }
     }
+    
+    // Final number of observations to generate.
+    int N_final = (N_new>0)?N_new:N;
 }
 
 #include multivariate/parameters.stan
@@ -84,21 +87,21 @@ transformed data
 generated quantities
 {
     // Expected value and draws of the prior predictive distribution
-    array[N] vector[R] mu, y;
+    array[N_final] vector[R] mu, y;
     
     {
         matrix[R, R] Sigma = diag_pre_multiply(sigma, L);
         
         for(r in 1:R)
         {
-            matrix[(N_new > 0)?N_new:N, K_c[r]] X_c_ = 
+            matrix[N_final, K_c[r]] X_c_ = 
                 (N_new > 0)
                 ? X_c_new[, K_c_begin[r]:K_c_end[r]]
                 : X_c[, K_c_begin[r]:K_c_end[r]];
             
             vector[K_c[r]] beta_ = beta[K_c_begin[r]:K_c_end[r]];
             
-            for(n in 1:N)
+            for(n in 1:N_final)
             {
                 mu[n, r] = alpha_c[r] + dot_product(X_c_[n], beta_);
             }
