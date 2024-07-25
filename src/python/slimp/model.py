@@ -10,7 +10,8 @@ from . import multilevel, multivariate, univariate
 
 class Model:
     def __init__(
-            self, formula, data, seed=-1, num_chains=1, sampler_parameters=None):
+            self, formula, data, seed=-1, num_chains=1, sampler_parameters=None,
+            **kwargs):
         ModelData = None
         if isinstance(formula, str):
             ModelData = univariate.ModelData
@@ -24,7 +25,7 @@ class Model:
         
         if sampler_parameters is None:
             self._sampler_parameters = action_parameters.Sample(
-                seed=seed, num_chains=num_chains)
+                seed=seed, num_chains=num_chains, **kwargs)
         else:
             self._sampler_parameters = sampler_parameters
         
