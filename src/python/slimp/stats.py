@@ -67,3 +67,18 @@ def summary(data, chains, percentiles=(5, 50, 95)):
     summary["MCSE"] = numpy.sqrt(summary["StdDev"])/numpy.sqrt(summary["N_Eff"])
     
     return pandas.DataFrame(summary)
+
+def hdi(x, mass):
+    """ Highest density interval, after "Doing Bayesian Data Analysis",
+        J. Kruschke, section 25.2.3
+    """
+    
+    x = numpy.sort(x)
+    N = len(x)
+    # Number of points in the interval to account for the mass
+    count = int(numpy.ceil(mass * N))
+    # Widths of all intervals of given mass
+    widths = x[count:] - x[:N - count]
+    # HDI is the narrowest interval
+    min_index = numpy.argmin(widths)
+    return (x[min_index], x[min_index+count])
