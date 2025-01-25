@@ -32,6 +32,9 @@
 #include "slimp/Logger.h"
 #include "slimp/VarContext.h"
 
+namespace slimp
+{
+
 template<typename Model>
 pybind11::dict sample(
     pybind11::dict data, action_parameters::Sample const & parameters)
@@ -221,5 +224,6 @@ pybind11::dict generate_quantities(
     return result;
 }
 
+}
 
 #endif // _e32a55c4_7716_4457_8494_3bfea83f498e

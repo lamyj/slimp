@@ -5,6 +5,9 @@
 
 #include "slimp/api.h"
 
+namespace slimp
+{
+
 namespace action_parameters
 {
 
@@ -56,6 +59,8 @@ public:
     size_t num_chains = 1;
     long seed = -1;
 };
+
+}
 
 }
 

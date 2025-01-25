@@ -27,11 +27,11 @@
 #define REGISTER_SAMPLER(name) \
     module.def(\
         #name "_sampler", \
-        &sample<name##_sampler::model>);
+        &slimp::sample<name##_sampler::model>);
 #define REGISTER_GQ(name, quantity) \
     module.def( \
         #name "_" #quantity, \
-        &generate_quantities<name##_##quantity::model>);
+        &slimp::generate_quantities<name##_##quantity::model>);
 #define REGISTER_ALL(name) \
     REGISTER_SAMPLER(name); \
     REGISTER_GQ(name, log_likelihood); \
@@ -46,7 +46,7 @@ PYBIND11_MODULE(_slimp, module)
     auto action_parameters_ = module.def_submodule("action_parameters");
     
     auto adapt_pickler = std::make_pair(
-        [](action_parameters::Adapt const & self){
+        [](slimp::action_parameters::Adapt const & self){
             pybind11::dict state;
             
             state["engaged"] = self.engaged;
@@ -62,7 +62,7 @@ PYBIND11_MODULE(_slimp, module)
             return state;
         },
         [](pybind11::dict state) {
-            action_parameters::Adapt self;
+            slimp::action_parameters::Adapt self;
             
             self.engaged = state["engaged"].cast<bool>();
             self.gamma = state["gamma"].cast<double>();
@@ -76,11 +76,12 @@ PYBIND11_MODULE(_slimp, module)
             
             return self;
         });
-    pybind11::class_<action_parameters::Adapt>(action_parameters_, "Adapt")
+    pybind11::class_<slimp::action_parameters::Adapt>(
+            action_parameters_, "Adapt")
         .def(pybind11::init<>())
         .def(pybind11::init(
             [](pybind11::kwargs kwargs) {
-                action_parameters::Adapt x;
+                slimp::action_parameters::Adapt x;
                 SET_FROM_KWARGS(kwargs, engaged, x, bool)
                 SET_FROM_KWARGS(kwargs, gamma, x, double)
                 SET_FROM_KWARGS(kwargs, delta, x, double)
@@ -91,19 +92,22 @@ PYBIND11_MODULE(_slimp, module)
                 SET_FROM_KWARGS(kwargs, window, x, unsigned int)
                 SET_FROM_KWARGS(kwargs, save_metric, x, bool)
                 return x;}))
-        .def_readwrite("engaged", &action_parameters::Adapt::engaged)
-        .def_readwrite("gamma", &action_parameters::Adapt::gamma)
-        .def_readwrite("delta", &action_parameters::Adapt::delta)
-        .def_readwrite("kappa", &action_parameters::Adapt::kappa)
-        .def_readwrite("t0", &action_parameters::Adapt::t0)
-        .def_readwrite("init_buffer", &action_parameters::Adapt::init_buffer)
-        .def_readwrite("term_buffer", &action_parameters::Adapt::term_buffer)
-        .def_readwrite("window", &action_parameters::Adapt::window)
-        .def_readwrite("save_metric", &action_parameters::Adapt::save_metric)
+        .def_readwrite("engaged", &slimp::action_parameters::Adapt::engaged)
+        .def_readwrite("gamma", &slimp::action_parameters::Adapt::gamma)
+        .def_readwrite("delta", &slimp::action_parameters::Adapt::delta)
+        .def_readwrite("kappa", &slimp::action_parameters::Adapt::kappa)
+        .def_readwrite("t0", &slimp::action_parameters::Adapt::t0)
+        .def_readwrite(
+            "init_buffer", &slimp::action_parameters::Adapt::init_buffer)
+        .def_readwrite(
+            "term_buffer", &slimp::action_parameters::Adapt::term_buffer)
+        .def_readwrite("window", &slimp::action_parameters::Adapt::window)
+        .def_readwrite(
+            "save_metric", &slimp::action_parameters::Adapt::save_metric)
         .def(pybind11::pickle(adapt_pickler.first, adapt_pickler.second));
     
     auto const hmc_pickler = std::make_pair(
-        [](action_parameters::HMC const & self){
+        [](slimp::action_parameters::HMC const & self){
             pybind11::dict state;
             
             state["int_time"] = self.int_time;
@@ -114,7 +118,7 @@ PYBIND11_MODULE(_slimp, module)
             return state;
         },
         [](pybind11::dict state){
-            action_parameters::HMC self;
+            slimp::action_parameters::HMC self;
             
             self.int_time = state["int_time"].cast<double>();
             self.max_depth = state["max_depth"].cast<int>();
@@ -123,34 +127,36 @@ PYBIND11_MODULE(_slimp, module)
             
             return self;
         });
-    pybind11::class_<action_parameters::HMC>(action_parameters_, "HMC")
+    pybind11::class_<slimp::action_parameters::HMC>(action_parameters_, "HMC")
         .def(pybind11::init<>())
         .def(pybind11::init(
             [](pybind11::kwargs kwargs) {
-                action_parameters::HMC x;
+                slimp::action_parameters::HMC x;
                 SET_FROM_KWARGS(kwargs, int_time, x, double)
                 SET_FROM_KWARGS(kwargs, max_depth, x, int)
                 SET_FROM_KWARGS(kwargs, stepsize, x, double)
                 SET_FROM_KWARGS(kwargs, stepsize_jitter, x, double)
                 return x;}))
-        .def_readwrite("int_time", &action_parameters::HMC::int_time)
-        .def_readwrite("max_depth", &action_parameters::HMC::max_depth)
-        .def_readwrite("stepsize", &action_parameters::HMC::stepsize)
+        .def_readwrite("int_time", &slimp::action_parameters::HMC::int_time)
+        .def_readwrite("max_depth", &slimp::action_parameters::HMC::max_depth)
+        .def_readwrite("stepsize", &slimp::action_parameters::HMC::stepsize)
         .def_readwrite(
-            "stepsize_jitter", &action_parameters::HMC::stepsize_jitter)
+            "stepsize_jitter", &slimp::action_parameters::HMC::stepsize_jitter)
         .def(pybind11::pickle(hmc_pickler.first, hmc_pickler.second));
     
-    pybind11::class_<action_parameters::Sample>(action_parameters_, "Sample")
+    pybind11::class_<slimp::action_parameters::Sample>(
+            action_parameters_, "Sample")
         .def(pybind11::init<>())
         .def(pybind11::init(
             [](pybind11::kwargs kwargs) {
-                action_parameters::Sample x;
+                slimp::action_parameters::Sample x;
                 SET_FROM_KWARGS(kwargs, num_samples, x, int)
                 SET_FROM_KWARGS(kwargs, num_warmup, x, int)
                 SET_FROM_KWARGS(kwargs, save_warmup, x, bool)
                 SET_FROM_KWARGS(kwargs, thin, x, int)
-                SET_FROM_KWARGS(kwargs, adapt, x, action_parameters::Adapt)
-                SET_FROM_KWARGS(kwargs, hmc, x, action_parameters::HMC)
+                SET_FROM_KWARGS(
+                    kwargs, adapt, x, slimp::action_parameters::Adapt)
+                SET_FROM_KWARGS(kwargs, hmc, x, slimp::action_parameters::HMC)
                 SET_FROM_KWARGS(kwargs, num_chains, x, size_t)
                 SET_FROM_KWARGS(kwargs, seed, x, long)
                 SET_FROM_KWARGS(kwargs, id, x, int)
@@ -159,23 +165,31 @@ PYBIND11_MODULE(_slimp, module)
                 SET_FROM_KWARGS(kwargs, sequential_chains, x, bool)
                 SET_FROM_KWARGS(kwargs, threads_per_chain, x, unsigned int)
                 return x;}))
-        .def_readwrite("num_samples", &action_parameters::Sample::num_samples)
-        .def_readwrite("num_warmup", &action_parameters::Sample::num_warmup)
-        .def_readwrite("save_warmup", &action_parameters::Sample::save_warmup)
-        .def_readwrite("thin", &action_parameters::Sample::thin)
-        .def_readwrite("adapt", &action_parameters::Sample::adapt)
-        .def_readwrite("hmc", &action_parameters::Sample::hmc)
-        .def_readwrite("num_chains", &action_parameters::Sample::num_chains)
-        .def_readwrite("seed", &action_parameters::Sample::seed)
-        .def_readwrite("id", &action_parameters::Sample::id)
-        .def_readwrite("init_radius", &action_parameters::Sample::init_radius)
-        .def_readwrite("refresh", &action_parameters::Sample::refresh)
         .def_readwrite(
-            "sequential_chains", &action_parameters::Sample::sequential_chains)
+            "num_samples", &slimp::action_parameters::Sample::num_samples)
         .def_readwrite(
-            "threads_per_chain", &action_parameters::Sample::threads_per_chain)
+            "num_warmup", &slimp::action_parameters::Sample::num_warmup)
+        .def_readwrite(
+            "save_warmup", &slimp::action_parameters::Sample::save_warmup)
+        .def_readwrite("thin", &slimp::action_parameters::Sample::thin)
+        .def_readwrite("adapt", &slimp::action_parameters::Sample::adapt)
+        .def_readwrite("hmc", &slimp::action_parameters::Sample::hmc)
+        .def_readwrite(
+            "num_chains", &slimp::action_parameters::Sample::num_chains)
+        .def_readwrite("seed", &slimp::action_parameters::Sample::seed)
+        .def_readwrite("id", &slimp::action_parameters::Sample::id)
+        .def_readwrite(
+            "init_radius", &slimp::action_parameters::Sample::init_radius)
+        .def_readwrite(
+            "refresh", &slimp::action_parameters::Sample::refresh)
+        .def_readwrite(
+            "sequential_chains",
+            &slimp::action_parameters::Sample::sequential_chains)
+        .def_readwrite(
+            "threads_per_chain",
+            &slimp::action_parameters::Sample::threads_per_chain)
         .def(pybind11::pickle(
-            [&](action_parameters::Sample const & self) {
+            [&](slimp::action_parameters::Sample const & self) {
                 pybind11::dict state;
                 
                 state["num_samples"] = self.num_samples;
@@ -192,7 +206,7 @@ PYBIND11_MODULE(_slimp, module)
                 return state;
             },
             [&](pybind11::dict const & state) {
-                action_parameters::Sample self;
+                slimp::action_parameters::Sample self;
                 
                 self.num_samples = state["num_samples"].cast<int>();
                 self.num_warmup = state["num_warmup"].cast<int>();
@@ -208,18 +222,20 @@ PYBIND11_MODULE(_slimp, module)
                 return self;
             }));
     
-    pybind11::class_<action_parameters::GenerateQuantities>(
+    pybind11::class_<slimp::action_parameters::GenerateQuantities>(
             action_parameters_, "GenerateQuantities")
         .def(pybind11::init<>())
         .def(pybind11::init(
             [](pybind11::kwargs kwargs) {
-                action_parameters::GenerateQuantities x;
+                slimp::action_parameters::GenerateQuantities x;
                 SET_FROM_KWARGS(kwargs, num_chains, x, size_t)
                 SET_FROM_KWARGS(kwargs, seed, x, long)
                 return x;}))
         .def_readwrite(
-            "num_chains", &action_parameters::GenerateQuantities::num_chains)
-        .def_readwrite("seed", &action_parameters::GenerateQuantities::seed);
+            "num_chains",
+            &slimp::action_parameters::GenerateQuantities::num_chains)
+        .def_readwrite(
+            "seed", &slimp::action_parameters::GenerateQuantities::seed);
         
     REGISTER_ALL(univariate);
     REGISTER_ALL(multivariate);
@@ -227,6 +243,8 @@ PYBIND11_MODULE(_slimp, module)
     REGISTER_GQ(multilevel, predict_posterior);
     REGISTER_GQ(multilevel, predict_prior);
     
-    module.def("get_effective_sample_size", &get_effective_sample_size);
-    module.def("get_potential_scale_reduction", &get_potential_scale_reduction);
+    module.def(
+        "get_effective_sample_size", &slimp::get_effective_sample_size);
+    module.def(
+        "get_potential_scale_reduction", &slimp::get_potential_scale_reduction);
 }

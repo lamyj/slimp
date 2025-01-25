@@ -9,6 +9,9 @@
 
 #include <iostream>
 
+namespace slimp
+{
+
 Logger
 ::Logger()
 {
@@ -103,4 +106,6 @@ Logger
     // auto logger = pybind11::getattr(this->_logging, level.c_str());
     // logger(message);
     this->_loggers.at(level)(message);
+}
+
 }

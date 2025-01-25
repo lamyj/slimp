@@ -10,6 +10,9 @@
 
 #include "slimp/api.h"
 
+namespace slimp
+{
+
 class SLIMP_API Logger: public stan::callbacks::logger
 {
 public:
@@ -36,5 +39,7 @@ private:
     std::map<std::string, pybind11::object> _loggers;
     void _log(std::string const & level, std::string const & message) const;
 };
+
+}
 
 #endif // _4ba5e886_d129_44ef_a3fc_e2a79869388e

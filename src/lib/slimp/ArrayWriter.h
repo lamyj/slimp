@@ -15,6 +15,9 @@
 
 #include "slimp/api.h"
 
+namespace slimp
+{
+
 /**
  * @brief Stan writer to a user-provided numpy array.
  *
@@ -58,5 +61,7 @@ private:
     std::vector<std::string> _names;
     std::map<size_t, std::vector<std::string>> _messages;
 };
+
+}
 
 #endif // _f5319195_814d_49c2_8186_b46578694468

@@ -8,6 +8,9 @@
 
 #include <stan/model/model_header.hpp>
 
+namespace slimp
+{
+
 Factory * Factory::_instance = nullptr;
 
 Factory &
@@ -39,4 +42,6 @@ Factory
     
     auto && creator = iterator->second;
     return creator(context, seed, stream);
+}
+
 }

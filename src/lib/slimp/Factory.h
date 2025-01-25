@@ -10,6 +10,9 @@
 
 #include "slimp/api.h"
 
+namespace slimp
+{
+
 /// @brief Register and create models.
 class SLIMP_API Factory
 {
@@ -37,5 +40,7 @@ private:
     
     Factory() = default;
 };
+
+}
 
 #endif // _f8884fab_b495_4452_ae61_fc546f8758fb

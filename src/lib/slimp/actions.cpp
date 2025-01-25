@@ -22,6 +22,9 @@
 #include "slimp/Logger.h"
 #include "slimp/VarContext.h"
 
+namespace slimp
+{
+
 Eigen::VectorXd get_effective_sample_size(
     Eigen::Ref<Eigen::MatrixXd> draws, size_t num_chains)
 {
@@ -64,4 +67,6 @@ Eigen::VectorXd get_potential_scale_reduction(
     }
     
     return sample_size;
+}
+
 }

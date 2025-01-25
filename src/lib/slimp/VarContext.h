@@ -11,6 +11,9 @@
 
 #include "slimp/api.h"
 
+namespace slimp
+{
+
 /// @brief Input data based on a Python dictionary
 class SLIMP_API VarContext: public stan::io::var_context
 {
@@ -47,5 +50,7 @@ private:
     std::unordered_map<std::string, std::vector<double>> _vals_r;
     std::unordered_map<std::string, std::vector<size_t>> _dims_i, _dims_r;
 };
+
+}
 
 #endif // _5eca19ab_3261_414f_8dd3_ce485c9e547d

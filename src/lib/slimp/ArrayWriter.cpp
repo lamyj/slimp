@@ -13,6 +13,9 @@
 #include <pybind11/numpy.h>
 #include <stan/callbacks/writer.hpp>
 
+namespace slimp
+{
+
 ArrayWriter
 ::ArrayWriter(Array & array, size_t chain, size_t offset, size_t skip)
 : _array(array), _chain(chain), _offset(offset), _skip(skip), _draw(0), _names()
@@ -94,4 +97,6 @@ ArrayWriter
 ::names() const
 {
     return this->_names;
+}
+
 }

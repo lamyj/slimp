@@ -12,6 +12,9 @@
 #include <stan/io/validate_dims.hpp>
 #include <stan/io/var_context.hpp>
 
+namespace slimp
+{
+
 VarContext
 ::VarContext(pybind11::dict dictionary)
 {
@@ -259,4 +262,6 @@ VarContext
         return;
     }
     stan::io::validate_dims(*this, stage, name, base_type, dims_declared);
+}
+
 }

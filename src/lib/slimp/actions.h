@@ -14,6 +14,9 @@
 #include "slimp/api.h"
 #include "slimp/action_parameters.h"
 
+namespace slimp
+{
+
 /**
  * @brief Sample from a model.
  * @param data Dictionary of data passed to the sampler
@@ -57,6 +60,8 @@ Eigen::VectorXd SLIMP_API get_effective_sample_size(
  */
 Eigen::VectorXd SLIMP_API get_potential_scale_reduction(
     Eigen::Ref<Eigen::MatrixXd> draws, size_t num_chains);
+
+}
 
 #include "actions.txx"
 
