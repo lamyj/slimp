@@ -76,9 +76,9 @@ Model<T>
             :this->_parameters.num_samples)});
     
     xt::ravel(xt::view(array, 0)) = xt::repeat(
-        xt::eval(xt::arange(1UL, 1+array.shape(0))), array.shape(1), 0);
+        xt::eval(xt::arange(1UL, 1+array.shape(1))), array.shape(2), 0);
     xt::ravel(xt::view(array, 1)) = xt::tile(
-        xt::arange(0UL, array.shape(1)), array.shape(0));
+        xt::arange(0UL, array.shape(2)), array.shape(1));
     
     return array;
 }
