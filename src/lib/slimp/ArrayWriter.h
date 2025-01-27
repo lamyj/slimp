@@ -11,7 +11,7 @@
 
 #include <Eigen/Dense>
 #include <stan/callbacks/writer.hpp>
-#include <xtensor/xarray.hpp>
+#include <xtensor/xtensor.hpp>
 
 #include "slimp/api.h"
 
@@ -22,6 +22,8 @@ namespace slimp
 class SLIMP_API ArrayWriter: public stan::callbacks::writer
 {
 public:
+    using Array = xt::xtensor<double, 3>;
+    
     ArrayWriter() = delete;
     ArrayWriter(ArrayWriter const &) = delete;
     ArrayWriter(ArrayWriter &&) = default;
@@ -36,9 +38,7 @@ public:
      * @param skip number of parameters at the head of written data which are
      *             skipped (used e.g. for generated quantities)
      */
-    ArrayWriter(
-        xt::xarray<double> & array, size_t chain,
-        size_t offset=0, size_t skip=0);
+    ArrayWriter(Array & array, size_t chain, size_t offset=0, size_t skip=0);
     
     /// @addtogroup writer_Interface Interface of std::callbacks::writer
     /// @{
@@ -52,7 +52,7 @@ public:
     std::vector<std::string> const & names() const;
     
 private:
-    xt::xarray<double> & _array;
+    Array & _array;
     size_t _chain, _offset, _skip, _draw;
     std::vector<std::string> _names;
     std::map<size_t, std::vector<std::string>> _messages;

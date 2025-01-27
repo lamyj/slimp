@@ -43,4 +43,6 @@ private:
 
 }
 
+#include "Model.txx"
+
 #endif // _eb77cafa_e85b_4b8c_b57b_cb9bbabab4c6

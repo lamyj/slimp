@@ -7,7 +7,7 @@
 
 BOOST_AUTO_TEST_CASE(Names)
 {
-    xt::xarray<double> array({2, 3, 5}, 0.);
+    slimp::ArrayWriter::Array array({2, 3, 5}, 0.);
     
     slimp::ArrayWriter writer(array, 1);
     writer(std::vector<std::string>{"foo", "bar"});
@@ -16,7 +16,7 @@ BOOST_AUTO_TEST_CASE(Names)
 
 BOOST_AUTO_TEST_CASE(Array)
 {
-    xt::xarray<double> array({3, 2, 5}, 0.);
+    slimp::ArrayWriter::Array array({3, 2, 5}, 0.);
     
     slimp::ArrayWriter writer(array, 1, 1, 2);
     
@@ -37,7 +37,7 @@ BOOST_AUTO_TEST_CASE(Array)
 
 BOOST_AUTO_TEST_CASE(Matrix1)
 {
-    xt::xarray<double> array({3, 2, 4}, 0.);
+    slimp::ArrayWriter::Array array({3, 2, 4}, 0.);
     
     slimp::ArrayWriter writer(array, 1, 1, 2);
     
@@ -80,7 +80,7 @@ BOOST_AUTO_TEST_CASE(Matrix1)
 
 BOOST_AUTO_TEST_CASE(Matrix2)
 {
-    xt::xarray<double> array({3, 2, 4}, 0.);
+    slimp::ArrayWriter::Array array({3, 2, 4}, 0.);
     
     slimp::ArrayWriter writer(array, 1, 1, 2);
     

@@ -10,6 +10,7 @@
 
 #include <Eigen/Dense>
 #include <pybind11/pybind11.h>
+#include <xtensor/xtensor.hpp>
 
 #include "slimp/api.h"
 #include "slimp/action_parameters.h"
@@ -43,23 +44,13 @@ pybind11::dict SLIMP_API generate_quantities(
     pybind11::dict data, Eigen::Ref<Eigen::MatrixXd> draws,
     action_parameters::GenerateQuantities const & parameters);
 
-/**
- * @brief Compute the effective sample size for each column of the draws
- * @param draws each column hold the draws of a variable, and is concatenation
- *              of all chains
- * @param num_chains number of chains
- */
-Eigen::VectorXd SLIMP_API get_effective_sample_size(
-    Eigen::Ref<Eigen::MatrixXd> draws, size_t num_chains);
+/// @brief Compute the effective sample size for each parameter
+xt::xtensor<double, 1> SLIMP_API get_effective_sample_size(
+    xt::xtensor<double, 3> const & draws);
 
-/**
- * @brief Compute the potential scale reduction (Rhat) for each column of the draws
- * @param draws each column hold the draws of a variable, and is concatenation
- *              of all chains
- * @param num_chains number of chains
- */
-Eigen::VectorXd SLIMP_API get_potential_scale_reduction(
-    Eigen::Ref<Eigen::MatrixXd> draws, size_t num_chains);
+/// @brief Compute the potential scale reduction (Rhat) for each parameter
+xt::xtensor<double, 1> SLIMP_API get_potential_scale_reduction(
+    xt::xtensor<double, 3> const & draws);
 
 }
 

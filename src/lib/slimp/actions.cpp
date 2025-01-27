@@ -1,72 +1,61 @@
 #include "actions.h"
 
-#include <iostream>
-#include <memory>
-#include <stdexcept>
-#include <string>
-#include <tuple>
-#include <vector>
+// WARNING: Stan must be included before Eigen so that the plugin system is
+// active. https://discourse.mc-stan.org/t/includes-in-user-header/26093
+#include <stan/math.hpp>
 
 #include <pybind11/pybind11.h>
-#include <pybind11/stl.h>
-#include <stan/callbacks/interrupt.hpp>
-#include <stan/io/empty_var_context.hpp>
 #include <stan/analyze/mcmc/compute_effective_sample_size.hpp>
 #include <stan/analyze/mcmc/compute_potential_scale_reduction.hpp>
-#include <stan/services/sample/hmc_nuts_diag_e_adapt.hpp>
-#include <stan/services/sample/standalone_gqs.hpp>
+#include <xtensor/xtensor.hpp>
+#include <xtensor/xview.hpp>
 
+#include "slimp/api.h"
 #include "slimp/action_parameters.h"
-#include "slimp/ArrayWriter.h"
-#include "slimp/Factory.h"
-#include "slimp/Logger.h"
-#include "slimp/VarContext.h"
+
 
 namespace slimp
 {
 
-Eigen::VectorXd get_effective_sample_size(
-    Eigen::Ref<Eigen::MatrixXd> draws, size_t num_chains)
+xt::xtensor<double, 1> get_effective_sample_size(
+    xt::xtensor<double, 3> const & draws)
 {
-    Eigen::VectorXd sample_size(draws.cols());
+    xt::xtensor<double, 1> sample_size(
+        xt::xtensor<double, 1>::shape_type{draws.shape(0)});
     
-    auto const draws_per_chain = draws.rows()/num_chains;
-    for(size_t column=0; column!=draws.cols(); ++column)
+    for(size_t parameter=0; parameter!=draws.shape(0); ++parameter)
     {
-        auto const vector = draws.col(column);
-        
-        std::vector<double const *> chains(num_chains);
-        for(size_t chain=0; chain!=num_chains; ++chain)
+        // WARNING: this assumes that the draws array is C-contiguous
+        std::vector<double const *> chains(draws.shape(1));
+        for(size_t chain=0; chain!=chains.size(); ++chain)
         {
-            chains[chain] = vector.data()+draws_per_chain*chain;
+            chains[chain] = &draws(parameter, chain);
         }
-        sample_size[column] = stan::analyze::compute_effective_sample_size(
-            chains, draws_per_chain);
+        sample_size[parameter] = stan::analyze::compute_effective_sample_size(
+            chains, draws.shape(2));
     }
     
     return sample_size;
 }
 
-Eigen::VectorXd get_potential_scale_reduction(
-    Eigen::Ref<Eigen::MatrixXd> draws, size_t num_chains)
+xt::xtensor<double, 1> get_potential_scale_reduction(
+    xt::xtensor<double, 3> const & draws)
 {
-    Eigen::VectorXd sample_size(draws.cols());
-    
-    auto const draws_per_chain = draws.rows()/num_chains;
-    for(size_t column=0; column!=draws.cols(); ++column)
+    xt::xtensor<double, 1> R_hat(
+        xt::xtensor<double, 1>::shape_type{draws.shape(0)});
+    for(size_t parameter=0; parameter!=draws.shape(0); ++parameter)
     {
-        auto const vector = draws.col(column);
-        
-        std::vector<double const *> chains(num_chains);
-        for(size_t chain=0; chain!=num_chains; ++chain)
+        // WARNING: this assumes that the draws array is C-contiguous
+        std::vector<double const *> chains(draws.shape(1));
+        for(size_t chain=0; chain!=chains.size(); ++chain)
         {
-            chains[chain] = vector.data()+draws_per_chain*chain;
+            chains[chain] = &draws(parameter, chain);
         }
-        sample_size[column] = stan::analyze::compute_potential_scale_reduction(
-            chains, draws_per_chain);
+        R_hat[parameter] = stan::analyze::compute_potential_scale_reduction(
+            chains, draws.shape(2));
     }
     
-    return sample_size;
+    return R_hat;
 }
 
 }
