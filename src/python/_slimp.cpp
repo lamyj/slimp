@@ -8,7 +8,6 @@
 
 #include "slimp/action_parameters.h"
 #include "slimp/actions.h"
-#include "slimp/Factory.h"
 
 #include "multilevel/predict_prior.h"
 #include "multilevel/predict_posterior.h"
