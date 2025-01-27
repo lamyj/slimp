@@ -10,14 +10,17 @@
 #include <stan/math.hpp>
 
 #include <Eigen/Dense>
-#include <pybind11/numpy.h>
 #include <stan/callbacks/writer.hpp>
+#include <xtensor/xadapt.hpp>
+#include <xtensor/xarray.hpp>
+#include <xtensor/xview.hpp>
 
 namespace slimp
 {
 
 ArrayWriter
-::ArrayWriter(Array & array, size_t chain, size_t offset, size_t skip)
+::ArrayWriter(
+    xt::xarray<double> & array, size_t chain, size_t offset, size_t skip)
 : _array(array), _chain(chain), _offset(offset), _skip(skip), _draw(0), _names()
 {
     // Nothing else
@@ -35,24 +38,15 @@ void
 ArrayWriter
 ::operator()(std::vector<double> const & state)
 {
-    if(state.size()-this->_skip != this->_array.shape(2)-this->_offset)
-    {
-        throw std::runtime_error(
-            "Shape mismatch (state): expected "
-            + std::to_string(this->_array.shape(2)-this->_offset)
-            + " got " + std::to_string(state.size()-this->_skip));
-    }
+    using namespace xt::placeholders;
     
-    auto source = state.begin()+this->_skip;
-    auto destination = this->_array.mutable_unchecked().mutable_data(
-        this->_chain, this->_draw, this->_offset);
-    auto const stride = this->_array.strides()[2]/this->_array.itemsize();
-    while(source != state.end())
-    {
-        *destination = *source;
-        ++source;
-        destination += stride;
-    }
+    auto const parameters = state.size()-this->_skip;
+    xt::view(
+            this->_array, xt::range(this->_offset, _), this->_chain, this->_draw
+        ) = xt::adapt(
+            state.data()+this->_skip, parameters, xt::no_ownership(),
+            std::vector<std::size_t>{parameters});
+    
     ++this->_draw;
 }
 
@@ -67,29 +61,27 @@ void
 ArrayWriter
 ::operator()(Eigen::Ref<Eigen::Matrix<double, -1, -1>> const & values)
 {
-    if(values.rows()-this->_skip != this->_array.shape(2)-this->_offset)
-    {
-        throw std::runtime_error(
-            "Shape mismatch (values): expected "
-            + std::to_string(this->_array.shape(2)-this->_offset)
-            + " got " + std::to_string(values.rows()-this->_skip));
-    }
+    using namespace xt::placeholders;
     
-    auto source = values(this->_skip, 0);
-    auto destination = this->_array.mutable_unchecked().mutable_data(
-        this->_chain, this->_draw, this->_offset);
-    auto const stride = this->_array.strides()[2]/this->_array.itemsize();
-    for(size_t j=0; j!=values.cols(); ++j)
-    {
-        for(size_t i=this->_skip; i!=values.rows(); ++i)
-        {
-            *destination = values(i,j);
-            destination += stride;
-        }
-        ++this->_draw;
-        destination = this->_array.mutable_unchecked().mutable_data(
-            this->_chain, this->_draw, this->_offset);
-    }
+    // From Stan documentation, "The input is expected to have parameters in the
+    // rows and samples in the columns".
+    
+    // auto const source_parameters = values.rows();
+    auto const draws = values.cols();
+    
+    auto const source = xt::view(
+        xt::adapt<xt::layout_type::column_major>(
+            values.data(), values.size(), xt::no_ownership(),
+            std::vector<long>{values.rows(), values.cols()}),
+        xt::range(this->_skip, _), xt::all());
+    
+    auto target = xt::view(
+        this->_array, xt::range(this->_offset, _), this->_chain,
+        xt::range(this->_draw, this->_draw+draws));
+    
+    target = source;
+    
+    this->_draw += draws;
 }
 
 std::vector<std::string> const &

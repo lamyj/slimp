@@ -10,25 +10,18 @@
 #include <stan/math.hpp>
 
 #include <Eigen/Dense>
-#include <pybind11/numpy.h>
 #include <stan/callbacks/writer.hpp>
+#include <xtensor/xarray.hpp>
 
 #include "slimp/api.h"
 
 namespace slimp
 {
 
-/**
- * @brief Stan writer to a user-provided numpy array.
- *
- * The array must be a F-style, 3D array of doubles with shape chains × draws ×
- * parameters.
- */
+/// @brief Stan writer to an array of shape parameters x chains x draws
 class SLIMP_API ArrayWriter: public stan::callbacks::writer
 {
 public:
-    using Array = pybind11::array_t<double, pybind11::array::f_style>;
-    
     ArrayWriter() = delete;
     ArrayWriter(ArrayWriter const &) = delete;
     ArrayWriter(ArrayWriter &&) = default;
@@ -43,20 +36,23 @@ public:
      * @param skip number of parameters at the head of written data which are
      *             skipped (used e.g. for generated quantities)
      */
-    ArrayWriter(Array & array, size_t chain, size_t offset=0, size_t skip=0);
+    ArrayWriter(
+        xt::xarray<double> & array, size_t chain,
+        size_t offset=0, size_t skip=0);
     
     /// @addtogroup writer_Interface Interface of std::callbacks::writer
     /// @{
     void operator()(std::vector<std::string> const & names) override;
     void operator()(std::vector<double> const & state) override;
     void operator()(std::string const & message) override;
-    void operator()(Eigen::Ref<Eigen::Matrix<double, -1, -1>> const & values) override;
+    void operator()(
+        Eigen::Ref<Eigen::Matrix<double, -1, -1>> const & values) override;
     /// @}
     
     std::vector<std::string> const & names() const;
     
 private:
-    Array & _array;
+    xt::xarray<double> & _array;
     size_t _chain, _offset, _skip, _draw;
     std::vector<std::string> _names;
     std::map<size_t, std::vector<std::string>> _messages;
