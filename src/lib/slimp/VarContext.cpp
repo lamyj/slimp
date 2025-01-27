@@ -137,6 +137,22 @@ VarContext
     }
 }
 
+void
+VarContext
+::set(std::string const & key, int x)
+{
+    this->_vals_i.insert({key, {x}});
+    this->_dims_i.insert({key, {}});
+}
+
+void
+VarContext
+::set(std::string const & key, double x)
+{
+    this->_vals_r.insert({key, {x}});
+    this->_dims_r.insert({key, {}});
+}
+
 bool
 VarContext
 ::contains_r(std::string const & name) const

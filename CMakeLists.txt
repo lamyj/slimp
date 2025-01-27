@@ -13,3 +13,4 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 add_subdirectory("src/lib")
 add_subdirectory("src/python")
+add_subdirectory("tests")

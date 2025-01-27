@@ -8,6 +8,7 @@
 
 #include <pybind11/pybind11.h>
 #include <stan/io/var_context.hpp>
+#include <xtensor/xarray.hpp>
 
 #include "slimp/api.h"
 
@@ -26,6 +27,16 @@ public:
     VarContext & operator=(VarContext &&) = default;
     
     VarContext(pybind11::dict dictionary);
+    
+    void set(std::string const & key, int x);
+    
+    void set(std::string const & key, double x);
+    
+    template<typename T, std::enable_if_t<std::is_integral<T>::value, bool> = true>
+    void set(std::string const & key, xt::xarray<T> const & array);
+    
+    template<typename T, std::enable_if_t<std::is_floating_point<T>::value, bool> = true>
+    void set(std::string const & key, xt::xarray<T> const & array);
     
     /// @addtogroup var_context_Interface Interface of std::io::var_context
     /// @{
@@ -52,5 +63,7 @@ private:
 };
 
 }
+
+#include "VarContext.txx"
 
 #endif // _5eca19ab_3261_414f_8dd3_ce485c9e547d
