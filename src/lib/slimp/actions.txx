@@ -135,7 +135,7 @@ pybind11::dict generate_quantities(
     action_parameters::Sample p;
     p.num_chains = parameters.num_chains; p.seed = parameters.seed;
     Model<T> model(context, p);
-    auto generated_quantities = model.create_generated_quantities();
+    auto generated_quantities = model.create_generated_quantities(draws);
     model.generate(draws, generated_quantities);
     
     std::vector<std::string> names{"chain__", "draw__"};

@@ -154,7 +154,7 @@ Model<T>
 template<typename T>
 typename Model<T>::Array
 Model<T>
-::create_generated_quantities()
+::create_generated_quantities(Array const & draws)
 {
     std::vector<std::string> model_names;
     this->_model.constrained_param_names(model_names, false, false);
@@ -163,17 +163,12 @@ Model<T>
     auto const parameters = gq_names.size() - model_names.size();
     
     Array array(Array::shape_type{
-        2 + parameters,
-        this->_parameters.num_chains,
-        size_t(
-            this->_parameters.save_warmup
-            ?(this->_parameters.num_warmup+this->_parameters.num_samples)
-            :this->_parameters.num_samples)});
+        2 + parameters, draws.shape(1), draws.shape(2)});
     
     xt::ravel(xt::view(array, 0)) = xt::repeat(
-        xt::eval(xt::arange(1UL, 1+array.shape(0))), array.shape(1), 0);
+        xt::eval(xt::arange(1UL, 1+array.shape(1))), array.shape(2), 0);
     xt::ravel(xt::view(array, 1)) = xt::tile(
-        xt::arange(0UL, array.shape(1)), array.shape(0));
+        xt::arange(0UL, array.shape(2)), array.shape(1));
     
     return array;
 }
@@ -195,7 +190,8 @@ Model<T>
     std::vector<ArrayWriter> writers;
     for(size_t chain=0; chain!=draws.shape(1); ++chain)
     {
-        Eigen::MatrixXd destination(draws.shape(2), draws.shape(0));
+        draws_array.emplace_back(draws.shape(2), draws.shape(0));
+        auto & destination = draws_array.back();
         for(std::size_t parameter=0; parameter!=draws.shape(0); ++parameter)
         {
             for(std::size_t draw=0; draw!=draws.shape(2); ++draw)

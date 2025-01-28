@@ -29,7 +29,7 @@ public:
     Array create_samples();
     void sample(Array & array);
     
-    Array create_generated_quantities();
+    Array create_generated_quantities(Array const & draws);
     void generate(Array const & draws, Array & generated_quantities);
     
 private:
