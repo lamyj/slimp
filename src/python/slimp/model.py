@@ -119,15 +119,15 @@ class Model:
     
     def _generate_quantities(self, name, *args, **kwargs):
         new_data = self._model_data.new_data(*args, **kwargs)
-        parameters = action_parameters.GenerateQuantities(
-            seed=self._sampler_parameters.seed,
-            num_chains=self._sampler_parameters.num_chains)
         
-        data = getattr(_slimp, f"{self._model_name}_{name}")( 
-            new_data,
-            # NOTE: must only include model parameters
-            self._samples.samples[self._samples.parameters_columns].values,
-            parameters)
+        # NOTE: must only include model parameters
+        draws = self._samples.samples[self._samples.parameters_columns].values.T
+        chains = self._sampler_parameters.num_chains
+        draws = draws.reshape(-1, chains, draws.shape[1]//chains)
+        data = getattr(_slimp, f"{self._model_name}_{name}")(
+            new_data, draws, self._sampler_parameters)
+        
+        print(data["array"].shape, data["columns"])
         return sample_data_as_df(data)
     
     def __getstate__(self):

@@ -156,10 +156,8 @@ typename Model<T>::Array
 Model<T>
 ::create_generated_quantities(Array const & draws)
 {
-    std::vector<std::string> model_names;
-    this->_model.constrained_param_names(model_names, false, false);
-    std::vector<std::string> gq_names;
-    this->_model.constrained_param_names(gq_names, false, true);
+    auto const model_names = this->model_names(false, false);
+    auto const gq_names = this->model_names(false, true);
     auto const parameters = gq_names.size() - model_names.size();
     
     Array array(Array::shape_type{
