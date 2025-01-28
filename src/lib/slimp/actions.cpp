@@ -13,7 +13,6 @@
 #include "slimp/api.h"
 #include "slimp/action_parameters.h"
 
-
 namespace slimp
 {
 
@@ -29,7 +28,7 @@ xt::xtensor<double, 1> get_effective_sample_size(
         std::vector<double const *> chains(draws.shape(1));
         for(size_t chain=0; chain!=chains.size(); ++chain)
         {
-            chains[chain] = &draws(parameter, chain);
+            chains[chain] = &draws.unchecked(parameter, chain);
         }
         sample_size[parameter] = stan::analyze::compute_effective_sample_size(
             chains, draws.shape(2));
@@ -49,7 +48,7 @@ xt::xtensor<double, 1> get_potential_scale_reduction(
         std::vector<double const *> chains(draws.shape(1));
         for(size_t chain=0; chain!=chains.size(); ++chain)
         {
-            chains[chain] = &draws(parameter, chain);
+            chains[chain] = &draws.unchecked(parameter, chain);
         }
         R_hat[parameter] = stan::analyze::compute_potential_scale_reduction(
             chains, draws.shape(2));
