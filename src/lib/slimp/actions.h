@@ -38,7 +38,7 @@ pybind11::dict SLIMP_API sample(
 template<typename Model>
 pybind11::dict SLIMP_API generate_quantities(
     pybind11::dict data, xt::xtensor<double, 3> const & draws,
-    action_parameters::GenerateQuantities const & parameters);
+    action_parameters::Sample const & parameters);
 
 /// @brief Compute the effective sample size for each parameter
 xt::xtensor<double, 1> SLIMP_API get_effective_sample_size(

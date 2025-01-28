@@ -128,13 +128,10 @@ pybind11::dict sample(
 template<typename T>
 pybind11::dict generate_quantities(
     pybind11::dict data, xt::xtensor<double, 3> const & draws,
-    action_parameters::GenerateQuantities const & parameters)
+    action_parameters::Sample const & parameters)
 {
     auto context = to_context(data);
-    // FIXME: GenerateQuantities is a strict subset of Sample. Remove it?
-    action_parameters::Sample p;
-    p.num_chains = parameters.num_chains; p.seed = parameters.seed;
-    Model<T> model(context, p);
+    Model<T> model(context, parameters);
     auto generated_quantities = model.create_generated_quantities(draws);
     model.generate(draws, generated_quantities);
     

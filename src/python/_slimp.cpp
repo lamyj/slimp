@@ -5,6 +5,8 @@
 #include <pybind11/eigen.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
+#define FORCE_IMPORT_ARRAY
+#include <xtensor-python/pytensor.hpp>
 
 #include "slimp/action_parameters.h"
 #include "slimp/actions.h"
@@ -32,7 +34,7 @@
         #name "_" #quantity, \
         &slimp::generate_quantities<name##_##quantity::model>);
 #define REGISTER_ALL(name) \
-    REGISTER_SAMPLER(name); \
+    REGISTER_SAMPLER(name) \
     REGISTER_GQ(name, log_likelihood); \
     REGISTER_GQ(name, predict_posterior); \
     REGISTER_GQ(name, predict_prior);
@@ -221,21 +223,6 @@ PYBIND11_MODULE(_slimp, module)
                 return self;
             }));
     
-    pybind11::class_<slimp::action_parameters::GenerateQuantities>(
-            action_parameters_, "GenerateQuantities")
-        .def(pybind11::init<>())
-        .def(pybind11::init(
-            [](pybind11::kwargs kwargs) {
-                slimp::action_parameters::GenerateQuantities x;
-                SET_FROM_KWARGS(kwargs, num_chains, x, size_t)
-                SET_FROM_KWARGS(kwargs, seed, x, long)
-                return x;}))
-        .def_readwrite(
-            "num_chains",
-            &slimp::action_parameters::GenerateQuantities::num_chains)
-        .def_readwrite(
-            "seed", &slimp::action_parameters::GenerateQuantities::seed);
-        
     REGISTER_ALL(univariate);
     REGISTER_ALL(multivariate);
     REGISTER_SAMPLER(multilevel);

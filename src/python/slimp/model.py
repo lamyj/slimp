@@ -127,7 +127,6 @@ class Model:
         data = getattr(_slimp, f"{self._model_name}_{name}")(
             new_data, draws, self._sampler_parameters)
         
-        print(data["array"].shape, data["columns"])
         return sample_data_as_df(data)
     
     def __getstate__(self):

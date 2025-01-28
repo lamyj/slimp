@@ -53,13 +53,6 @@ public:
     unsigned int threads_per_chain = 1;
 };
 
-class SLIMP_API GenerateQuantities
-{
-public:
-    size_t num_chains = 1;
-    long seed = -1;
-};
-
 }
 
 }
