@@ -5,7 +5,7 @@
 #include <vector>
 
 #include <stan/io/var_context.hpp>
-#include <stan/mcmc/hmc/nuts/adapt_diag_e_nuts.hpp>
+// #include <stan/mcmc/hmc/nuts/adapt_diag_e_nuts.hpp>
 #include <xtensor/xtensor.hpp>
 
 #include "slimp/action_parameters.h"
@@ -33,12 +33,8 @@ public:
     void generate(Array const & draws, Array & generated_quantities);
     
 private:
-    using RandomNumberGenerator = boost::ecuyer1988;
-    
     T _model;
     action_parameters::Sample _parameters;
-    RandomNumberGenerator _rng;
-    mutable stan::mcmc::adapt_diag_e_nuts<T, RandomNumberGenerator> _sampler;
 };
 
 }

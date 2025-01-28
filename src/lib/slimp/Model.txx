@@ -11,8 +11,6 @@
 #include <stan/callbacks/interrupt.hpp>
 #include <stan/io/var_context.hpp>
 #include <stan/io/empty_var_context.hpp>
-#include <stan/mcmc/hmc/nuts/adapt_diag_e_nuts.hpp>
-#include <stan/services/util/create_rng.hpp>
 #include <stan/services/sample/hmc_nuts_diag_e_adapt.hpp>
 #include <stan/services/sample/standalone_gqs.hpp>
 
@@ -33,9 +31,7 @@ Model<T>
 ::Model(
     stan::io::var_context & context,
     action_parameters::Sample const & parameters)
-: _model(context, parameters.seed, &std::cout), _parameters(parameters),
-    _rng(stan::services::util::create_rng<RandomNumberGenerator>(0, 1)),
-    _sampler(this->_model, this->_rng)
+: _model(context, parameters.seed, &std::cout), _parameters(parameters)
 {
     // Nothing else.
 }
@@ -58,7 +54,12 @@ Model<T>
 {
     std::vector<std::string> hmc_names;
     stan::mcmc::sample::get_sample_param_names(hmc_names);
-    this->_sampler.get_sampler_param_names(hmc_names);
+    // this->_sampler.get_sampler_param_names(hmc_names);
+    hmc_names.push_back("stepsize__");
+    hmc_names.push_back("treedepth__");
+    hmc_names.push_back("n_leapfrog__");
+    hmc_names.push_back("divergent__");
+    hmc_names.push_back("energy__");
     return hmc_names;
 }
 
