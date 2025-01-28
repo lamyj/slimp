@@ -60,9 +60,11 @@ def summary(data, chains, percentiles=(5, 50, 95)):
     quantiles = numpy.quantile(data, numpy.array(percentiles)/100, axis=0)
     for p, q in zip(percentiles, quantiles):
         summary[f"{p}%"] = q
-        
-    summary["N_Eff"] = get_effective_sample_size(data.values, chains)
-    summary["R_hat"] = get_potential_scale_reduction(data.values, chains)
+    
+    draws = len(data)//chains
+    reshaped = data.values.T.reshape(-1, chains, draws)
+    summary["N_Eff"] = get_effective_sample_size(reshaped)
+    summary["R_hat"] = get_potential_scale_reduction(reshaped)
     
     summary["MCSE"] = numpy.sqrt(summary["StdDev"])/numpy.sqrt(summary["N_Eff"])
     
