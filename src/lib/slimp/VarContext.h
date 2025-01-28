@@ -6,7 +6,6 @@
 #include <unordered_map>
 #include <vector>
 
-#include <pybind11/pybind11.h>
 #include <stan/io/var_context.hpp>
 #include <xtensor/xarray.hpp>
 
@@ -25,8 +24,6 @@ public:
     ~VarContext() = default;
     VarContext & operator=(VarContext const &) = default;
     VarContext & operator=(VarContext &&) = default;
-    
-    VarContext(pybind11::dict dictionary);
     
     void set(std::string const & key, int x);
     

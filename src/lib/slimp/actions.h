@@ -1,14 +1,10 @@
 #ifndef _9ef486bc_b1a6_4872_b2a2_52eb0aea794c
 #define _9ef486bc_b1a6_4872_b2a2_52eb0aea794c
 
-#include <string>
-#include <vector>
-
 // WARNING: Stan must be included before Eigen so that the plugin system is
 // active. https://discourse.mc-stan.org/t/includes-in-user-header/26093
 #include <stan/math.hpp>
 
-#include <Eigen/Dense>
 #include <pybind11/pybind11.h>
 #include <xtensor/xtensor.hpp>
 
@@ -41,7 +37,7 @@ pybind11::dict SLIMP_API sample(
  */
 template<typename Model>
 pybind11::dict SLIMP_API generate_quantities(
-    pybind11::dict data, Eigen::Ref<Eigen::MatrixXd> draws,
+    pybind11::dict data, xt::xtensor<double, 3> const & draws,
     action_parameters::GenerateQuantities const & parameters);
 
 /// @brief Compute the effective sample size for each parameter
