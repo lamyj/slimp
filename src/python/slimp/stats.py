@@ -38,37 +38,33 @@ def _r_squared_data_frame(mu, sigma):
     return var_mu/(var_mu+var_sigma)
 
 def hmc_diagnostics(data, max_depth):
-    diagnostics = (
-        data.groupby("chain__")
-        .agg(
-            divergent=("divergent__", lambda x: numpy.sum(x!=0)),
-            depth_exceeded=("treedepth__", lambda x: numpy.sum(x >= max_depth)),
-            e_bfmi=(
-                "energy__", 
-                lambda x: (
-                    numpy.sum(numpy.diff(x)**2)
-                    / numpy.sum((x-numpy.mean(x))**2)))))
-    diagnostics.index = diagnostics.index.rename("chain").astype(int)
+    energy = data.sel(parameter="energy__").values
+    diagnostics = pandas.DataFrame({
+        "divergent": data.sel(parameter="divergent__").sum(axis=1),
+        "depth_exceeded": 
+            (data.sel(parameter="treedepth__")>=max_depth)
+            .sum(axis=1),
+        "e_bfmi": 
+            numpy.square(numpy.diff(energy, axis=1)).mean(axis=1) 
+                / numpy.var(energy, axis=1, ddof=1)})
     return diagnostics
 
-def summary(data, chains, percentiles=(5, 50, 95)):
+def summary(data, percentiles=(5, 50, 95)):
     summary = {}
     
-    summary["Mean"] = numpy.mean(data, axis=0)
+    summary["Mean"] = numpy.mean(data, axis=(1,2))
     summary["MCSE"] = None
-    summary["StdDev"] = numpy.std(data, axis=0)
-    quantiles = numpy.quantile(data, numpy.array(percentiles)/100, axis=0)
+    summary["StdDev"] = numpy.std(data, axis=(1,2))
+    quantiles = numpy.quantile(data, numpy.array(percentiles)/100, axis=(1,2))
     for p, q in zip(percentiles, quantiles):
         summary[f"{p}%"] = q
     
-    draws = len(data)//chains
-    reshaped = data.values.T.reshape(-1, chains, draws)
-    summary["N_Eff"] = get_effective_sample_size(reshaped)
-    summary["R_hat"] = get_potential_scale_reduction(reshaped)
+    summary["N_Eff"] = get_effective_sample_size(data)
+    summary["R_hat"] = get_potential_scale_reduction(data)
     
     summary["MCSE"] = numpy.sqrt(summary["StdDev"])/numpy.sqrt(summary["N_Eff"])
     
-    return pandas.DataFrame(summary)
+    return pandas.DataFrame(summary, index=data["parameter"])
 
 def hdi(x, mass):
     """ Highest density interval, after "Doing Bayesian Data Analysis",

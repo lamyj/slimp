@@ -2,8 +2,7 @@ import formulaic
 import numpy
 import pandas
 
-from . import _slimp, action_parameters, sample_data_as_df, stats
-from .misc import sample_data_as_df
+from . import _slimp, action_parameters, misc, stats
 from .samples import Samples
 
 from . import multilevel, multivariate, univariate
@@ -101,14 +100,14 @@ class Model:
             sampler = getattr(_slimp, f"{self._model_name}_sampler")
         data = sampler(self._model_data.fit_data, self._sampler_parameters)
         self._samples = Samples(
-            sample_data_as_df(data),
+            misc.sample_data_as_xarray(data),
             self._model_data.predictor_mapper, data["parameters_columns"])
         self._generated_quantities = {}
     
     def summary(self, percentiles=(5, 50, 95)):
         return stats.summary(
-            self._samples.samples[["lp__"]].join(self._samples.draws),
-            self._sampler_parameters.num_chains,
+            self._samples.samples.sel(
+                parameter=["lp__", *self._samples.draws.columns]),
             percentiles)
     
     def predict(self, data):
@@ -121,13 +120,13 @@ class Model:
         new_data = self._model_data.new_data(*args, **kwargs)
         
         # NOTE: must only include model parameters
-        draws = self._samples.samples[self._samples.parameters_columns].values.T
-        chains = self._sampler_parameters.num_chains
-        draws = draws.reshape(-1, chains, draws.shape[1]//chains)
+        draws = self._samples.samples.sel(
+            parameter=self._samples.predictor_mapper(
+                self._samples.parameters_columns))
         data = getattr(_slimp, f"{self._model_name}_{name}")(
             new_data, draws, self._sampler_parameters)
         
-        return sample_data_as_df(data)
+        return misc.sample_data_as_df(data)
     
     def __getstate__(self):
         return {
