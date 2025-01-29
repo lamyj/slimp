@@ -1,7 +1,7 @@
 import numpy
 import pandas
 
-from ._slimp import get_effective_sample_size, get_potential_scale_reduction
+from . import _slimp
 
 def r_squared(*args, **kwargs):
     # https://avehtari.github.io/bayes_R2/bayes_R2.html
@@ -59,8 +59,8 @@ def summary(data, percentiles=(5, 50, 95)):
     for p, q in zip(percentiles, quantiles):
         summary[f"{p}%"] = q
     
-    summary["N_Eff"] = get_effective_sample_size(data)
-    summary["R_hat"] = get_potential_scale_reduction(data)
+    summary["N_Eff"] = _slimp.get_effective_sample_size(data)
+    summary["R_hat"] = _slimp.get_split_potential_scale_reduction(data)
     
     summary["MCSE"] = numpy.sqrt(summary["StdDev"])/numpy.sqrt(summary["N_Eff"])
     

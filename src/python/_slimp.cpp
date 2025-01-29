@@ -233,4 +233,7 @@ PYBIND11_MODULE(_slimp, module)
         "get_effective_sample_size", &slimp::get_effective_sample_size);
     module.def(
         "get_potential_scale_reduction", &slimp::get_potential_scale_reduction);
+    module.def(
+        "get_split_potential_scale_reduction",
+        &slimp::get_split_potential_scale_reduction);
 }

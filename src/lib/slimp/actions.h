@@ -48,6 +48,10 @@ xt::xtensor<double, 1> SLIMP_API get_effective_sample_size(
 xt::xtensor<double, 1> SLIMP_API get_potential_scale_reduction(
     xt::xtensor<double, 3> const & draws);
 
+/// @brief Compute the split-chain potential scale reduction (Rhat) for each parameter
+xt::xtensor<double, 1> SLIMP_API get_split_potential_scale_reduction(
+    xt::xtensor<double, 3> const & draws);
+
 }
 
 #include "actions.txx"
