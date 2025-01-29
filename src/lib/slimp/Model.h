@@ -4,11 +4,12 @@
 #include <string>
 #include <vector>
 
+#include <stan/callbacks/logger.hpp>
 #include <stan/io/var_context.hpp>
-// #include <stan/mcmc/hmc/nuts/adapt_diag_e_nuts.hpp>
 #include <xtensor/xtensor.hpp>
 
 #include "slimp/action_parameters.h"
+#include "slimp/Logger.h"
 
 namespace slimp
 {
@@ -26,11 +27,14 @@ public:
     std::vector<std::string> model_names(
         bool transformed_parameters=true, bool generated_quantities=true) const;
     std::vector<std::string> hmc_names() const;
+    
     Array create_samples();
-    void sample(Array & array);
+    void sample(Array & array, stan::callbacks::logger && logger=Logger());
     
     Array create_generated_quantities(Array const & draws);
-    void generate(Array const & draws, Array & generated_quantities);
+    void generate(
+        Array const & draws, Array & generated_quantities,
+        stan::callbacks::logger && logger=Logger());
     
 private:
     T _model;

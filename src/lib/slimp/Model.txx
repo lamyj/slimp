@@ -80,10 +80,9 @@ Model<T>
 template<typename T>
 void
 Model<T>
-::sample(Array & array)
+::sample(Array & array, stan::callbacks::logger && logger)
 {
     stan::callbacks::interrupt interrupt;
-    Logger logger;
     
     std::vector<std::shared_ptr<stan::io::var_context>> init_contexts;
     auto const & parameters = this->_parameters;
@@ -161,10 +160,11 @@ Model<T>
 template<typename T>
 void
 Model<T>
-::generate(Array const & draws, Array & generated_quantities)
+::generate(
+    Array const & draws, Array & generated_quantities,
+    stan::callbacks::logger && logger)
 {
     stan::callbacks::interrupt interrupt;
-    Logger logger;
     
     std::vector<std::string> model_names;
     this->_model.constrained_param_names(model_names, false, false);
