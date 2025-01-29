@@ -14,8 +14,6 @@
 #include <stan/services/sample/hmc_nuts_diag_e_adapt.hpp>
 #include <stan/services/sample/standalone_gqs.hpp>
 
-#include <xtensor/xmanipulation.hpp>
-#include <xtensor/xpad.hpp>
 #include <xtensor/xtensor.hpp>
 #include <xtensor/xview.hpp>
 
@@ -69,17 +67,12 @@ Model<T>
 ::create_samples()
 {
     Array array(Array::shape_type{
-        2 + this->hmc_names().size() + this->model_names().size(),
+        this->hmc_names().size() + this->model_names().size(),
         this->_parameters.num_chains,
         size_t(
             this->_parameters.save_warmup
             ?(this->_parameters.num_warmup+this->_parameters.num_samples)
             :this->_parameters.num_samples)});
-    
-    xt::ravel(xt::view(array, 0)) = xt::repeat(
-        xt::eval(xt::arange(1UL, 1+array.shape(1))), array.shape(2), 0);
-    xt::ravel(xt::view(array, 1)) = xt::tile(
-        xt::arange(0UL, array.shape(2)), array.shape(1));
     
     return array;
 }
@@ -105,7 +98,7 @@ Model<T>
     std::vector<ArrayWriter> sample_writers;
     for(size_t i=0; i!=num_chains; ++i)
     {
-        sample_writers.emplace_back(array, i, 2UL);
+        sample_writers.emplace_back(array, i);
     }
     
     std::vector<stan::callbacks::writer> diagnostic_writers(num_chains);
@@ -160,13 +153,7 @@ Model<T>
     auto const gq_names = this->model_names(false, true);
     auto const parameters = gq_names.size() - model_names.size();
     
-    Array array(Array::shape_type{
-        2 + parameters, draws.shape(1), draws.shape(2)});
-    
-    xt::ravel(xt::view(array, 0)) = xt::repeat(
-        xt::eval(xt::arange(1UL, 1+array.shape(1))), array.shape(2), 0);
-    xt::ravel(xt::view(array, 1)) = xt::tile(
-        xt::arange(0UL, array.shape(2)), array.shape(1));
+    Array array(Array::shape_type{parameters, draws.shape(1), draws.shape(2)});
     
     return array;
 }
@@ -198,7 +185,7 @@ Model<T>
             }
         }
         writers.emplace_back(
-            generated_quantities, chain, 2UL, model_names.size());
+            generated_quantities, chain, 0UL, model_names.size());
     }
     
     auto const return_code = stan::services::standalone_generate(

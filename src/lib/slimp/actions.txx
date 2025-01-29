@@ -109,9 +109,7 @@ pybind11::dict sample(
     auto samples = model.create_samples();
     model.sample(samples);
     
-    std::vector<std::string> names{"chain__", "draw__"};
-    auto const hmc_names = model.hmc_names();
-    std::copy(hmc_names.begin(), hmc_names.end(), std::back_inserter(names));
+    std::vector<std::string> names = model.hmc_names();
     auto const model_names = model.model_names();
     std::copy(model_names.begin(), model_names.end(), std::back_inserter(names));
     
@@ -135,11 +133,10 @@ pybind11::dict generate_quantities(
     auto generated_quantities = model.create_generated_quantities(draws);
     model.generate(draws, generated_quantities);
     
-    std::vector<std::string> names{"chain__", "draw__"};
     auto const model_names = model.model_names(true, true);
-    std::copy(
-        model_names.begin()+model.model_names(true, false).size(), model_names.end(),
-        std::back_inserter(names));
+    std::vector<std::string> names{
+        model_names.begin()+model.model_names(true, false).size(),
+        model_names.end()};
     
     pybind11::dict result;
     result["array"] = generated_quantities;
