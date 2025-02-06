@@ -6,12 +6,16 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
+#define FORCE_IMPORT_ARRAY
+#include <xtensor-python/pyarray.hpp>
+
 #include "slimp/actions.h"
 
 #include "my_model.h"
 
 PYBIND11_MODULE(my_model, module)
 {
-    module.def("sample", &sample<my_model::model>);
-    module.def("generate_quantities", &generate_quantities<my_model::model>);
+    module.def("sample", &slimp::sample<my_model::model>);
+    module.def(
+        "generate_quantities", &slimp::generate_quantities<my_model::model>);
 }

@@ -1,5 +1,5 @@
 from ._slimp import action_parameters
-from .misc import sample_data_as_df
+from .misc import sample_data_as_df, sample_data_as_xarray
 from .model import Model
 from .plots import KDEPlot, parameters_plot, predictive_plot
 from .samples import Samples

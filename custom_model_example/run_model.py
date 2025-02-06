@@ -17,17 +17,14 @@ fit_data = {
 }
 
 sampler_parameters = slimp.action_parameters.Sample(num_chains=4, seed=42)
-samples = slimp.sample_data_as_df(my_model.sample(fit_data, sampler_parameters))
+samples = slimp.sample_data_as_xarray(my_model.sample(fit_data, sampler_parameters))
 
 print(slimp.stats.hmc_diagnostics(samples, sampler_parameters.hmc.max_depth))
 
-draws = samples.filter(["a", "b_x", "b_y", "sigma"])
-summary = slimp.summary(
-    samples[["lp__"]].join(draws), sampler_parameters.num_chains)
+summary = slimp.summary(samples.sel(parameter=["lp__", "a", "b_x", "b_y", "sigma"]))
 print(summary)
 
-generate_parameters = slimp.action_parameters.GenerateQuantities(
-    seed=sampler_parameters.seed, num_chains=sampler_parameters.num_chains)
-        
 generated = slimp.sample_data_as_df(
-    my_model.generate_quantities(fit_data, draws.values, generate_parameters))
+    my_model.generate_quantities(
+        fit_data, samples.sel(parameter=["a", "b_x", "b_y", "sigma"]),
+        sampler_parameters))
