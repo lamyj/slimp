@@ -145,6 +145,29 @@ pybind11::dict generate_quantities(
     return result;
 }
 
+template<typename Model>
+void parallel_sample(
+    slimp::VarContext const & context,
+    slimp::action_parameters::Sample parameters, std::size_t R,
+    ContextUpdater const & update_context,
+    ResultsUpdater const & update_results)
+{
+    // NOTE: force sequential chains so that parallelization can take place at
+    // the voxel level
+    parameters.sequential_chains = true;
+    
+    oneapi::tbb::parallel_for(0UL, R, [&] (size_t r) {
+        auto context_ = context;
+        update_context(context_, r);
+        
+        Model model(context_, parameters);
+        auto samples = model.create_samples();
+        model.sample(samples, stan::callbacks::logger());
+        
+        update_results(samples, r);
+    });
+}
+
 }
 
 #endif // _e32a55c4_7716_4457_8494_3bfea83f498e
