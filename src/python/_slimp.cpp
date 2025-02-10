@@ -203,6 +203,9 @@ PYBIND11_MODULE(_slimp, module)
                 state["seed"] = self.seed;
                 state["id"] = self.id;
                 state["init_radius"] = self.init_radius;
+                state["refresh"] = self.refresh;
+                state["sequential_chains"] = self.sequential_chains;
+                state["threads_per_chain"] = self.threads_per_chain;
                 
                 return state;
             },
@@ -219,6 +222,11 @@ PYBIND11_MODULE(_slimp, module)
                 self.seed = state["seed"].cast<long>();
                 self.id = state["id"].cast<int>();
                 self.init_radius = state["init_radius"].cast<double>();
+                self.refresh = state["refresh"].cast<int>();
+                self.sequential_chains =
+                    state["sequential_chains"].cast<bool>();
+                self.threads_per_chain =
+                    state["threads_per_chain"].cast<unsigned int>();
                 
                 return self;
             }));
