@@ -43,7 +43,7 @@ VarContext to_context(pybind11::dict data)
             // Signed integer type
             if(dtype == 'b') 
             {
-                context.set(key, value.cast<xt::xarray<bool>>());
+                context.set(key, value.cast<xt::xarray<int8_t>>());
             }
             else if(dtype == 'h')
             {
