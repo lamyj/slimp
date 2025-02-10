@@ -25,7 +25,7 @@ data
     real mu_alpha, sigma_alpha;
     
     // Scale of the non-intercept unmodeled coefficients priors (location is 0)
-    vector<lower=0>[K0-1] sigma_beta;
+    vector<lower=0>[K0?(K0-1):0] sigma_beta;
     
     // Scale of the individual-level variance prior
     real<lower=0> lambda_sigma_y;
@@ -46,9 +46,9 @@ data
 transformed data
 {
     // Center the unmodeled predictors around the *original* predictors
-    vector[K0-1] X0_bar = center_columns(X0, N, K0);
-    matrix[N, K0-1] X0_c = center(X0, X0_bar, N, K0);
-    matrix[N_new, K0-1] X0_c_new = center(X0_new, X0_bar, N_new, K0);
+    vector[K0?(K0-1):0] X0_bar = center_columns(X0, N, K0);
+    matrix[N, K0?(K0-1):0] X0_c = center(X0, X0_bar, N, K0);
+    matrix[N_new, K0?(K0-1):0] X0_c_new = center(X0_new, X0_bar, N_new, K0);
     
     vector[K] zeros_K = zeros_vector(K);
     
@@ -74,7 +74,10 @@ generated quantities
         
         // Part of the posterior predicted expectation related to unmodeled
         // predictors.
-        vector[N_final] mu_0 = alpha_c_ + ((N_new > 0)?X0_c_new:X0_c) * beta_0_;
+        vector[N_final] mu_0 = 
+            K0
+            ? (alpha_c_ + ((N_new > 0)?X0_c_new:X0_c) * beta_0_)
+            : zeros_vector(N_final);
         
         // Part of the posterior predicted expectation related to modeled
         // predictors. The expected value is 0.

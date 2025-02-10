@@ -31,9 +31,9 @@ data
 transformed data
 {
     // Center the unmodeled predictors around the *original* predictors
-    vector[K0-1] X0_bar = center_columns(X0, N, K0);
-    matrix[N, K0-1] X0_c = center(X0, X0_bar, N, K0);
-    matrix[N_new, K0-1] X0_c_new = center(X0_new, X0_bar, N_new, K0);
+    vector[K0?(K0-1):0] X0_bar = center_columns(X0, N, K0);
+    matrix[N, K0?(K0-1):0] X0_c = center(X0, X0_bar, N, K0);
+    matrix[N_new, K0?(K0-1):0] X0_c_new = center(X0_new, X0_bar, N_new, K0);
     
     // Final number of observations to generate.
     int N_final = (N_new>0)?N_new:N;
@@ -48,7 +48,10 @@ generated quantities
     {
         // Part of the posterior predicted expectation related to unmodeled
         // predictors.
-        vector[N_final] mu_0 = alpha_c + ((N_new > 0)?X0_c_new:X0_c) * beta;
+        vector[N_final] mu_0 = 
+            K0
+            ? (alpha_c[1] + ((N_new > 0)?X0_c_new:X0_c) * beta)
+            : zeros_vector(N_final);
         
         // Part of the posterior predicted expectation related to modeled
         // predictors

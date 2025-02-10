@@ -1,9 +1,9 @@
 parameters
 {
     // Centered intercept
-    real alpha_c;
+    vector[K0?1:0] alpha_c;
     // Vector of unmodeled individual-level, non-intercept, coefficients
-    vector[K0-1] beta;
+    vector[K0?(K0-1):0] beta;
     // Variance of individual-level regression
     real<lower=1.2e-38, upper=3.4e+38> sigma_y;
     

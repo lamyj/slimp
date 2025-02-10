@@ -44,11 +44,13 @@ functions
 
 data
 {
-    // Number of observations, unmodeled individual-level predictors, modeled
-    // individual-level predictors, and groups. No group-level predictor is used
-    // in this model, as the modeled invididual-level coefficients are centered
-    // on 0.
-    int<lower=1> N, K0, K, J;
+    // Number of observations, modeled individual-level predictors, and groups.
+    // No group-level predictor is used in this model, as the modeled
+    // invididual-level coefficients are centered on 0.
+    int<lower=1> N, K, J;
+    // Number of unmodeled individual-level predictors. May be 0 to omit
+    // unmodeled individual-level predictors.
+    int<lower=0> K0;
     
     // Observations
     vector[N] y;
@@ -64,7 +66,7 @@ data
     real mu_alpha, sigma_alpha;
     
     // Scale of the non-intercept unmodeled coefficients priors (location is 0)
-    vector<lower=0>[K0-1] sigma_beta;
+    vector<lower=0>[K0?(K0-1):0] sigma_beta;
     
     // Scale of the individual-level variance prior
     real<lower=0> lambda_sigma_y;
@@ -82,8 +84,9 @@ data
 transformed data
 {
     // Center the predictors
-    vector[K0-1] X0_bar = center_columns(X0, N, K0);
-    matrix[N, K0-1] X0_c = center(X0, X0_bar, N, K0);
+    vector[K0?(K0-1):0] X0_bar = center_columns(X0, N, K0);
+    matrix[N, K0?(K0-1):0] X0_c = center(X0, X0_bar, N, K0);
+    
     
     vector[K] zeros_K = zeros_vector(K);
 }
@@ -98,7 +101,7 @@ model
         X_Beta[n] = X[n, :] * Beta[group[n]];
     }
     // NOTE: faster than y ~ normal(alpha_c+X0_c*beta + X_Beta, sigma_y)
-    y ~ normal_id_glm(X0_c, alpha_c + X_Beta, beta, sigma_y);
+    y ~ normal_id_glm(X0_c, (K0?alpha_c[1]:0) + X_Beta, beta, sigma_y);
     
     alpha_c ~ student_t(3, mu_alpha, sigma_alpha);
     beta ~ student_t(3, 0, sigma_beta);
@@ -124,5 +127,5 @@ generated quantities
     }
 
     // Non-centered intercept
-    real alpha = alpha_c - dot_product(X0_bar, beta);
+    real alpha = K0?(alpha_c[1] - dot_product(X0_bar, beta)):0;
 }
