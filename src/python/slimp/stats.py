@@ -19,12 +19,11 @@ def _r_squared_model(model):
     if isinstance(model.formula, list) and isinstance(model.formula[1], tuple):
         return r_squared(model.posterior_epred, model.draws["sigma_y"])
     elif isinstance(model.formula, list):
-        draws = model.draws
-        epred = model.posterior_epred
-        
         df = pandas.concat(
             [
-                r_squared(epred.filter(like=f"mu.{1+i}"), draws[f"{c}/sigma"])
+                r_squared(
+                    model.posterior_epred.filter(regex=fr"mu\.[^.]+\.{i+1}"),
+                    model.draws[f"{c}/sigma"])
                 for i, c in enumerate(model.outcomes.columns)],
             axis="columns")
         df.columns = model.outcomes.columns
