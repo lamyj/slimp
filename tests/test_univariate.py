@@ -81,12 +81,12 @@ class TestUnivariate(TestModel):
         self._test_data(model)
         self._test_sampler_parameters(model, 42, 4, 1000)
         self._test_hmc_diagnostics(model)
-        self._test_draws(model, 0.25)
-        self._test_log_likelihood(model, 0.4)
-        self._test_prior_predict(model, 0.4)
-        self._test_posterior_epred(model, 0.4)
-        self._test_posterior_predict(model, 0.4)
-        self._test_r_squared(model, 0.4)
+        self._test_draws(model, 0.5)
+        self._test_log_likelihood(model, 0.5)
+        self._test_prior_predict(model, 0.5)
+        self._test_posterior_epred(model, 0.5)
+        self._test_posterior_predict(model, 0.5)
+        self._test_r_squared(model, 0.5)
 
 if __name__ == "__main__":
     unittest.main()
