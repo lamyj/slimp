@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.14)
 
-project("slimp" VERSION 0.6.0)
+project("slimp" VERSION 1.0.0)
 
 option(BUILD_SHARED_LIBS "Build with shared libraries." ON)
 
