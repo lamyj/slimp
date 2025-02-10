@@ -43,6 +43,7 @@ foreach(stan_file ${stan_files})
     get_filename_component(relative_stan_dir "${relative_stan_path}" DIRECTORY)
     get_filename_component(name "${relative_stan_path}" NAME_WE)
     set(header "${CMAKE_CURRENT_BINARY_DIR}/${relative_stan_dir}/${name}.h")
+    file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/${relative_stan_dir}")
     if(NOT "${relative_stan_dir}" STREQUAL "")
         add_custom_command(
             OUTPUT "${header}"
