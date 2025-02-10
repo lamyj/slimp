@@ -4,6 +4,8 @@ find_package(Python COMPONENTS Interpreter Development NumPy REQUIRED)
 find_package(pybind11 REQUIRED)
 find_package(SUNDIALS REQUIRED)
 find_package(TBB REQUIRED)
+find_package(xtensor REQUIRED)
+find_package(xtensor-python REQUIRED)
 
 execute_process(
     COMMAND ${Python_EXECUTABLE}
@@ -79,7 +81,8 @@ target_include_directories(
     "$ENV{CMDSTAN}/stan/src" "$ENV{CMDSTAN}/stan/lib/stan_math")
 
 target_link_libraries(
-    pyslimp PUBLIC Boost::boost Eigen3::Eigen Python::NumPy TBB::tbb libslimp)
+    pyslimp PUBLIC Boost::boost Eigen3::Eigen Python::NumPy TBB::tbb
+    xtensor xtensor-python libslimp)
 
 if("${SUNDIALS_VERSION}" VERSION_GREATER_EQUAL "7.0.0")
     target_link_libraries(libslimp PUBLIC SUNDIALS::core)
