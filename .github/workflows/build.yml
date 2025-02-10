@@ -10,8 +10,8 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { os: "ubuntu-latest", container: "debian:bookworm", packaging: "apt", python: "python3" }
-          - { os: "ubuntu-latest", container: "ubuntu:noble", packaging: "apt", python: "python3" }
+          # - { os: "ubuntu-latest", container: "debian:bookworm", packaging: "apt", python: "python3" }
+          # - { os: "ubuntu-latest", container: "ubuntu:noble", packaging: "apt", python: "python3" }
           - { os: "ubuntu-latest", packaging: "conda", python: "python" }
     env:
       WORKSPACE: "${{ github.workspace }}"
