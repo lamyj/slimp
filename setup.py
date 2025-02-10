@@ -25,7 +25,8 @@ class BuildCMake(setuptools.Command, setuptools.command.build.SubCommand):
         
     def finalize_options(self):
         self.sources = [
-            *sorted(glob.glob(f"src/stan/*")),
+            *sorted(glob.glob(f"src/stan/*.stan")),
+            *sorted(glob.glob(f"src/stan/*/*.stan")),
             *sorted(glob.glob(f"src/lib/slimp/*")),
             *sorted(glob.glob(f"src/python/*.cpp"))]
         self.set_undefined_options("build_py", ("build_lib", "build_lib"))
