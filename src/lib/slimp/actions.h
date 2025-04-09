@@ -59,13 +59,37 @@ void parallel_sample(
 xt::xtensor<double, 1> SLIMP_API get_effective_sample_size(
     xt::xtensor<double, 3> const & draws);
 
+/**
+ * @brief Compute the effective sample size for each parameter. This is a
+ * parallel wrapper on the outermost dimension around
+ * get_effective_sample_size(draws).
+ */
+xt::xtensor<double, 2> SLIMP_API get_effective_sample_size(
+    xt::xtensor<double, 4> const & data);
+
 /// @brief Compute the potential scale reduction (Rhat) for each parameter
 xt::xtensor<double, 1> SLIMP_API get_potential_scale_reduction(
     xt::xtensor<double, 3> const & draws);
 
+/**
+ * @brief Compute the potential scale reduction (Rhat) for each parameter. This
+ * is a parallel wrapper on the outermost dimension around
+ * get_potential_scale_reduction(draws).
+ */
+xt::xtensor<double, 2> SLIMP_API get_potential_scale_reduction(
+    xt::xtensor<double, 4> const & data);
+
 /// @brief Compute the split-chain potential scale reduction (Rhat) for each parameter
 xt::xtensor<double, 1> SLIMP_API get_split_potential_scale_reduction(
     xt::xtensor<double, 3> const & draws);
+
+/**
+ * @brief Compute the split-chain potential scale reduction (Rhat) for each
+ * parameter. This is a parallel wrapper on the outermost dimension around
+ * get_split_potential_scale_reduction(draws).
+ */
+xt::xtensor<double, 2> SLIMP_API get_split_potential_scale_reduction(
+    xt::xtensor<double, 4> const & data);
 
 }
 

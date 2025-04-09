@@ -37,6 +37,41 @@ xt::xtensor<double, 1> get_effective_sample_size(
     return sample_size;
 }
 
+xt::xtensor<double, 2> wrapper(
+    xt::xtensor<double, 4> const & data,
+    xt::xtensor<double, 1> (*function)(xt::xtensor<double, 3> const &))
+{
+    auto const num_threads_string = std::getenv("NUM_THREADS");
+    std::size_t num_threads = 1;
+    if(num_threads_string != nullptr)
+    {
+        try
+        {
+            num_threads = std::stoul(num_threads_string);
+        }
+        catch(std::exception &)
+        {
+            // Do nothing, keep the default value.
+        }
+    }
+    auto const g = tbb::global_control(
+        tbb::global_control::max_allowed_parallelism, num_threads);
+    xt::xtensor<double, 2> result(
+        xt::xtensor<double, 2>::shape_type{data.shape()[0], data.shape()[1]});
+    
+    oneapi::tbb::parallel_for(0UL, data.shape()[0], [&] (size_t r) {
+        xt::view(result, r) = function(xt::eval(xt::view(data, r)));
+    });
+    
+    return result;
+}
+
+xt::xtensor<double, 2> get_effective_sample_size(
+    xt::xtensor<double, 4> const & data)
+{
+    return wrapper(data, get_effective_sample_size);
+}
+
 xt::xtensor<double, 1> get_potential_scale_reduction(
     xt::xtensor<double, 3> const & draws)
 {
@@ -57,6 +92,12 @@ xt::xtensor<double, 1> get_potential_scale_reduction(
     return R_hat;
 }
 
+xt::xtensor<double, 2> get_potential_scale_reduction(
+    xt::xtensor<double, 4> const & data)
+{
+    return wrapper(data, get_potential_scale_reduction);
+}
+
 xt::xtensor<double, 1> get_split_potential_scale_reduction(
     xt::xtensor<double, 3> const & draws)
 {
@@ -75,6 +116,12 @@ xt::xtensor<double, 1> get_split_potential_scale_reduction(
     }
     
     return R_hat;
+}
+
+xt::xtensor<double, 2> get_split_potential_scale_reduction(
+    xt::xtensor<double, 4> const & data)
+{
+    return wrapper(data, get_split_potential_scale_reduction);
 }
 
 }

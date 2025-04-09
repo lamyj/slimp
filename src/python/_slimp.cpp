@@ -238,10 +238,27 @@ PYBIND11_MODULE(_slimp, module)
     REGISTER_GQ(multilevel, predict_prior);
     
     module.def(
-        "get_effective_sample_size", &slimp::get_effective_sample_size);
+        "get_effective_sample_size",
+        pybind11::overload_cast<xt::xtensor<double, 3> const &>(
+            &slimp::get_effective_sample_size));
     module.def(
-        "get_potential_scale_reduction", &slimp::get_potential_scale_reduction);
+        "get_effective_sample_size",
+        pybind11::overload_cast<xt::xtensor<double, 4> const &>(
+            &slimp::get_effective_sample_size));
+    module.def(
+        "get_potential_scale_reduction",
+        pybind11::overload_cast<xt::xtensor<double, 3> const &>(
+            &slimp::get_potential_scale_reduction));
+    module.def(
+        "get_potential_scale_reduction",
+        pybind11::overload_cast<xt::xtensor<double, 4> const &>(
+            &slimp::get_potential_scale_reduction));
     module.def(
         "get_split_potential_scale_reduction",
-        &slimp::get_split_potential_scale_reduction);
+        pybind11::overload_cast<xt::xtensor<double, 3> const &>(
+            &slimp::get_split_potential_scale_reduction));
+    module.def(
+        "get_split_potential_scale_reduction",
+        pybind11::overload_cast<xt::xtensor<double, 4> const &>(
+            &slimp::get_split_potential_scale_reduction));
 }

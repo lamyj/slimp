@@ -99,7 +99,8 @@ template<typename T>
 pybind11::dict sample(
     pybind11::dict data, action_parameters::Sample const & parameters)
 {
-    stan::math::init_threadpool_tbb(
+    auto const g = tbb::global_control(
+        tbb::global_control::max_allowed_parallelism, 
         parameters.sequential_chains
         ? parameters.threads_per_chain
         : parameters.num_chains*parameters.threads_per_chain);
