@@ -17,16 +17,16 @@ void
 VarContext
 ::set(std::string const & key, int x)
 {
-    this->_vals_i.insert({key, {x}});
-    this->_dims_i.insert({key, {}});
+    this->_vals_i[key] = {x};
+    this->_dims_i[key] = {};
 }
 
 void
 VarContext
 ::set(std::string const & key, double x)
 {
-    this->_vals_r.insert({key, {x}});
-    this->_dims_r.insert({key, {}});
+    this->_vals_r[key] = {x};
+    this->_dims_r[key] = {};
 }
 
 bool
