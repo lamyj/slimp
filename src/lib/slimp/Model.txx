@@ -66,13 +66,16 @@ typename Model<T>::Array
 Model<T>
 ::create_samples()
 {
+    auto const num_samples = 
+        this->_parameters.num_samples
+        + (this->_parameters.save_warmup?this->_parameters.num_warmup:0);
+    
+    auto const thinned_samples = 
+        num_samples / this->_parameters.thin
+        +((num_samples%this->_parameters.thin == 0)?0:1);
     Array array(Array::shape_type{
         this->hmc_names().size() + this->model_names().size(),
-        this->_parameters.num_chains,
-        size_t(
-            this->_parameters.save_warmup
-            ?(this->_parameters.num_warmup+this->_parameters.num_samples)
-            :this->_parameters.num_samples)});
+        this->_parameters.num_chains, thinned_samples});
     
     return array;
 }
