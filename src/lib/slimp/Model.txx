@@ -66,11 +66,11 @@ typename Model<T>::Array
 Model<T>
 ::create_samples()
 {
-    auto const num_samples = 
+    size_t const num_samples = 
         this->_parameters.num_samples
         + (this->_parameters.save_warmup?this->_parameters.num_warmup:0);
     
-    auto const thinned_samples = 
+    size_t const thinned_samples = 
         num_samples / this->_parameters.thin
         +((num_samples%this->_parameters.thin == 0)?0:1);
     Array array(Array::shape_type{
@@ -104,6 +104,8 @@ Model<T>
     }
     
     std::vector<stan::callbacks::writer> diagnostic_writers(num_chains);
+    
+    pybind11::gil_scoped_release release_gil;
     
     if(parameters.sequential_chains)
     {
@@ -190,6 +192,8 @@ Model<T>
         writers.emplace_back(
             generated_quantities, chain, 0UL, model_names.size());
     }
+    
+    pybind11::gil_scoped_release release_gil;
     
     auto const return_code = stan::services::standalone_generate(
         this->_model, draws.shape(1), draws_array, this->_parameters.seed,

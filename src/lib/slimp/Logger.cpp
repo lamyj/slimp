@@ -105,6 +105,7 @@ Logger
     
     // auto logger = pybind11::getattr(this->_logging, level.c_str());
     // logger(message);
+    pybind11::gil_scoped_acquire acquire_gil;
     this->_loggers.at(level)(message);
 }
 
