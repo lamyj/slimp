@@ -2,7 +2,8 @@ find_package(Boost REQUIRED)
 find_package(Eigen3 REQUIRED)
 find_package(Python COMPONENTS Interpreter Development NumPy REQUIRED)
 find_package(pybind11 REQUIRED)
-find_package(SUNDIALS REQUIRED)
+# NOTE: see remarks abount SUNDIALS below
+# find_package(SUNDIALS REQUIRED)
 find_package(TBB REQUIRED)
 find_package(xtensor REQUIRED)
 
@@ -31,17 +32,15 @@ endif()
 target_include_directories(
     libslimp PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/> $<INSTALL_INTERFACE:>
-        "$ENV{CMDSTAN}/stan/src" "$ENV{CMDSTAN}/stan/lib/stan_math")
+        "$ENV{CMDSTAN}/stan/src" "$ENV{CMDSTAN}/stan/lib/stan_math"
+        "$ENV{CMDSTAN}/stan/lib/stan_math"
+        # WARNING: due to splitting of C and C++ header files in SUNDIALS 7,
+        # only SUNDIALS 6 is usable: use headers of version bundled with cmdstan
+        "$ENV{CMDSTAN}/stan/lib/stan_math/lib/sundials_6.1.1/include")
 
 target_link_libraries(
     libslimp PUBLIC
     Boost::boost Eigen3::Eigen Python::NumPy Python::Python TBB::tbb xtensor)
-
-if("${SUNDIALS_VERSION}" VERSION_GREATER_EQUAL "7.0.0")
-    target_link_libraries(libslimp PUBLIC SUNDIALS::core)
-else()
-    target_link_libraries(libslimp PUBLIC SUNDIALS::generic)
-endif()
 
 set_target_properties(
     libslimp PROPERTIES OUTPUT_NAME slimp VERSION ${slimp_VERSION})
