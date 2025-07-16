@@ -6,6 +6,9 @@
 #include <string>
 #include <vector>
 
+#include <oneapi/tbb/enumerable_thread_specific.h>
+#include <oneapi/tbb/parallel_for.h>
+
 // WARNING: Stan must be included before Eigen so that the plugin system is
 // active. https://discourse.mc-stan.org/t/includes-in-user-header/26093
 #include <stan/math.hpp>
@@ -150,18 +153,46 @@ template<typename Model>
 void parallel_sample(
     slimp::VarContext const & context,
     slimp::action_parameters::Sample parameters, std::size_t R,
-    ContextUpdater const & update_context,
+    std::function<void(VarContext &, std::size_t)> const & update_context,
     ResultsUpdater const & update_results)
 {
     // NOTE: force sequential chains so that parallelization can take place at
     // the voxel level
     parameters.sequential_chains = true;
     
+    oneapi::tbb::enumerable_thread_specific<slimp::VarContext> context_(context);
     oneapi::tbb::parallel_for(0UL, R, [&] (size_t r) {
-        auto context_ = context;
-        update_context(context_, r);
+        update_context(context_.local(), r);
         
-        Model model(context_, parameters);
+        Model model(context_.local(), parameters);
+        auto samples = model.create_samples();
+        model.sample(samples, stan::callbacks::logger());
+        
+        update_results(samples, r);
+    });
+}
+
+template<typename Model>
+void parallel_sample(
+    slimp::VarContext const & context,
+    slimp::action_parameters::Sample parameters, std::size_t R,
+    std::function<bool(VarContext &, std::size_t)> const & update_context,
+    ResultsUpdater const & update_results)
+{
+    // NOTE: force sequential chains so that parallelization can take place at
+    // the voxel level
+    parameters.sequential_chains = true;
+    
+    oneapi::tbb::enumerable_thread_specific<slimp::VarContext> context_(context);
+    oneapi::tbb::parallel_for(0UL, R, [&] (size_t r) {
+        auto const may_run = update_context(context_.local(), r);
+        
+        if(!may_run)
+        {
+            return;
+        }
+        
+        Model model(context_.local(), parameters);
         auto samples = model.create_samples();
         model.sample(samples, stan::callbacks::logger());
         

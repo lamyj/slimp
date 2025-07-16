@@ -43,7 +43,6 @@ pybind11::dict SLIMP_API generate_quantities(
     pybind11::dict data, xt::xtensor<double, 3> const & draws,
     action_parameters::Sample const & parameters);
 
-using ContextUpdater = std::function<void(VarContext &, std::size_t)>;
 using ResultsUpdater = std::function<
     void(xt::xtensor<double, 3> const &, std::size_t)>;
 
@@ -52,7 +51,15 @@ template<typename Model>
 void parallel_sample(
     slimp::VarContext const & context,
     slimp::action_parameters::Sample parameters, std::size_t R,
-    ContextUpdater const & update_context,
+    std::function<void(VarContext &, std::size_t)> const & update_context,
+    ResultsUpdater const & update_results);
+    
+/// @brief Sample different contexts from a same model in parallel.
+template<typename Model>
+void parallel_sample(
+    slimp::VarContext const & context,
+    slimp::action_parameters::Sample parameters, std::size_t R,
+    std::function<bool(VarContext &, std::size_t)> const & update_context,
     ResultsUpdater const & update_results);
 
 /// @brief Compute the effective sample size for each parameter
