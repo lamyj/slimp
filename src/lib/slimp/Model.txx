@@ -105,8 +105,6 @@ Model<T>
     
     std::vector<stan::callbacks::writer> diagnostic_writers(num_chains);
     
-    pybind11::gil_scoped_release release_gil;
-    
     if(parameters.sequential_chains)
     {
         for(std::size_t chain=0; chain!=num_chains; ++chain)
@@ -130,6 +128,8 @@ Model<T>
     }
     else
     {
+        pybind11::gil_scoped_release release_gil;
+        
         auto const return_code = stan::services::sample::hmc_nuts_diag_e_adapt(
             this->_model, num_chains, init_contexts, parameters.seed,
             parameters.id, parameters.init_radius, parameters.num_warmup,

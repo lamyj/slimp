@@ -1,10 +1,10 @@
 #ifndef _4ba5e886_d129_44ef_a3fc_e2a79869388e
 #define _4ba5e886_d129_44ef_a3fc_e2a79869388e
 
-#include <map>
-#include <mutex>
 #include <string>
 #include <sstream>
+#include <vector>
+
 #include <pybind11/pybind11.h>
 #include <stan/callbacks/logger.hpp>
 
@@ -35,9 +35,19 @@ public:
     void fatal(std::stringstream const & message) override;
 
 private:
-    mutable std::mutex _mutex;
-    std::map<std::string, pybind11::object> _loggers;
-    void _log(std::string const & level, std::string const & message) const;
+    enum class Level
+    {
+        Debug=0,
+        Info=1,
+        Warn=2,
+        Error=3,
+        Fatal=4,
+        
+        Max=Fatal
+    };
+    
+    std::vector<pybind11::object> _loggers;
+    void _log(Level level, std::string const & message) const;
 };
 
 }
