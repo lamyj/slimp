@@ -124,4 +124,79 @@ xt::xtensor<double, 2> get_split_potential_scale_reduction(
     return wrapper(data, get_split_potential_scale_reduction);
 }
 
+VarContext to_context(pybind11::dict data)
+{
+    VarContext context;
+    for(auto && item: data)
+    {
+        auto const & key = item.first.cast<std::string>();
+        auto const & value = item.second;
+        if(pybind11::isinstance<pybind11::int_>(value))
+        {
+            context.set(key, value.cast<int>());
+        }
+        else if(pybind11::isinstance<pybind11::float_>(value))
+        {
+            context.set(key, value.cast<double>());
+        }
+        else
+        {
+            // https://numpy.org/doc/stable/reference/arrays.scalars.html#arrays-scalars-built-in
+            auto const dtype = value.cast<pybind11::array>().dtype().char_();
+            
+            // Signed integer type
+            if(dtype == 'b') 
+            {
+                context.set(key, value.cast<xt::xarray<int8_t>>());
+            }
+            else if(dtype == 'h')
+            {
+                context.set(key, value.cast<xt::xarray<int16_t>>());
+            }
+            else if(dtype == 'i')
+            {
+                context.set(key, value.cast<xt::xarray<int32_t>>());
+            }
+            else if(dtype == 'l')
+            {
+                context.set(key, value.cast<xt::xarray<int64_t>>());
+            }
+            // Unsigned integer types
+            else if(dtype == 'B')
+            {
+                context.set(key, value.cast<xt::xarray<uint8_t>>());
+            }
+            else if(dtype == 'H')
+            {
+                context.set(key, value.cast<xt::xarray<uint16_t>>());
+            }
+            else if(dtype == 'I')
+            {
+                context.set(key, value.cast<xt::xarray<uint32_t>>());
+            }
+            else if(dtype == 'L')
+            {
+                context.set(key, value.cast<xt::xarray<uint64_t>>());
+            }
+            // Floating-point types
+            else if(dtype == 'f')
+            {
+                context.set(key, value.cast<xt::xarray<float>>());
+            }
+            else if(dtype == 'd')
+            {
+                context.set(key, value.cast<xt::xarray<double>>());
+            }
+            // Unsupported type
+            else
+            {
+                throw std::runtime_error(
+                    std::string("Array type not handled: ")+ dtype);
+            }
+        }
+    }
+    
+    return context;
+}
+
 }

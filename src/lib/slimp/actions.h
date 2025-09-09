@@ -98,6 +98,7 @@ xt::xtensor<double, 1> SLIMP_API get_split_potential_scale_reduction(
 xt::xtensor<double, 2> SLIMP_API get_split_potential_scale_reduction(
     xt::xtensor<double, 4> const & data);
 
+VarContext SLIMP_API to_context(pybind11::dict data);
 }
 
 #include "actions.txx"
