@@ -28,6 +28,14 @@ def compile(stan_file, h_file, include_path=None, prefix=None):
     contents = re.sub(
         "get_stan_profile_data", f"get_stan_profile_data_{name}", contents)
     
+    contents = re.sub(
+        "(stan::math::profile_map profiles__;)", r"inline \1", contents)
+    contents = re.sub(
+        fr"(stan::model::model_base&\s+new_{name})", r"inline \1", contents)
+    contents = re.sub(
+        fr"(stan::math::profile_map& get_stan_profile_data_{name})",
+        r"inline \1", contents)
+    
     with open(h_file, "w") as fd:
         fd.write(contents)
 
