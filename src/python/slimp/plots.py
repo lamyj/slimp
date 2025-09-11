@@ -27,13 +27,18 @@ def predictive_plot(model, use_prior=False, count=50, alpha=0.2, plot_kwargs={})
     y = model.prior_predict if use_prior else model.posterior_predict
     subset = numpy.random.randint(0, len(y), count)
     
-    for draw in subset:
-        seaborn.kdeplot(y.iloc[draw, :], color="C0", alpha=alpha, **plot_kwargs)
-    
-    seaborn.kdeplot(
-        model.outcomes.values.squeeze(), color="k", alpha=1, **plot_kwargs)
-    plot_kwargs.get("ax", matplotlib.pyplot.gca()).set(
-        xlabel=model.outcomes.columns[0])
+    for outcome_index in range(len(model.outcomes.columns)):
+        y_outcome = (
+            y.filter(regex=f"\\.{1+outcome_index}$")
+            if len(model.outcomes.columns) > 1 else y)
+        color = f"C{outcome_index}" if len(model.outcomes.columns) > 1 else "k"
+        for draw_index, draw in enumerate(subset):
+            seaborn.kdeplot(
+                y_outcome.values[draw, :], color=color,
+                alpha=alpha, **plot_kwargs)
+        seaborn.kdeplot(
+            model.outcomes.iloc[:, outcome_index], color=color, alpha=1,
+            **plot_kwargs)
 
 class KDEPlot:
     def __init__(
