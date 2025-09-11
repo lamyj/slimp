@@ -18,7 +18,7 @@ list(SORT template_files)
 set(CMAKE_CXX_VISIBILITY_PRESET hidden)
 set(CMAKE_VISIBILITY_INLINES_HIDDEN 1)
 
-add_library(libslimp ${source_files} ${header_files})
+add_library(libslimp ${source_files} ${header_files} ${template_files})
 
 target_compile_definitions(
     libslimp PRIVATE $<$<PLATFORM_ID:Windows>:BUILDING_SLIMP>)

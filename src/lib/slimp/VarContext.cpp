@@ -6,7 +6,6 @@
 #include <string>
 #include <vector>
 
-#include <numpy/ndarrayobject.h>
 #include <stan/io/validate_dims.hpp>
 #include <stan/io/var_context.hpp>
 

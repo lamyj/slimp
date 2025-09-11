@@ -6,6 +6,7 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 #define FORCE_IMPORT_ARRAY
+#include <xtensor-python/pyarray.hpp>
 #include <xtensor-python/pytensor.hpp>
 
 #include "slimp/action_parameters.h"
@@ -44,6 +45,8 @@
 
 PYBIND11_MODULE(_slimp, module)
 {
+    xt::import_numpy();
+    
     auto action_parameters_ = module.def_submodule("action_parameters");
     
     auto adapt_pickler = std::make_pair(
