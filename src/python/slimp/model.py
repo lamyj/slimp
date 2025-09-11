@@ -110,11 +110,31 @@ class Model:
                 parameter=["lp__", *self._samples.draws.columns]),
             percentiles)
     
-    def predict(self, data):
+    def predict(self, data, long=False):
         predictors = self._model_data.new_predictors(data)
         draws = self._generate_quantities(
             "predict_posterior", predictors.values)
-        return draws.filter(like="mu"), draws.filter(like="y")
+        if long:
+            index = pandas.DataFrame(
+                numpy.tile(data, (2*self.outcomes.shape[1], 1)),
+                columns=data.columns, index=draws.columns)
+            
+            if len(self.outcomes.columns) > 1:
+                index["outcome"] = (
+                    numpy.tile(self.outcomes.columns, (len(data), 2))
+                    .T
+                    .ravel())
+            index["kind"] = [x.split(".", 1)[0] for x in index.index]
+            long_data = (
+                pandas.concat([draws, index.T])
+                .T
+                .melt(id_vars=index.columns, value_name="value", var_name="draw"))
+            return [
+                long_data.query(f"kind == '{x}'")
+                    .reset_index().drop(columns=["index", "kind"])
+                for x in ["mu", "y"]]
+        else:
+            return draws.filter(like="mu"), draws.filter(like="y")
     
     def _generate_quantities(self, name, *args, **kwargs):
         new_data = self._model_data.new_data(*args, **kwargs)
