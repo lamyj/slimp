@@ -3,6 +3,7 @@ import numpy
 import pandas
 
 from .predictor_mapper import PredictorMapper
+from . import NoCorrelation
 
 class ModelData:
     def __init__(self, formula, data):
@@ -30,10 +31,11 @@ class ModelData:
             
             "mu_alpha": numpy.squeeze(mu_y),
             "sigma_alpha": 2.5*numpy.squeeze(sigma_y),
-            "sigma_beta": numpy.concatenate(numpy.atleast_2d(
-                [2.5*(sy/sx) for sx, sy in zip(sigma_X, sigma_y)])),
+            "sigma_beta": numpy.hstack(
+                [2.5*(sy/sx) for sx, sy in zip(sigma_X, sigma_y)]),
             "lambda_sigma": numpy.squeeze(1/sigma_y),
-            "eta_L": 1.0}
+            "eta_L": 1.0,
+            "use_covariance": not isinstance(formula, NoCorrelation)}
     
     def new_predictors(self, data):
         data = data.astype({

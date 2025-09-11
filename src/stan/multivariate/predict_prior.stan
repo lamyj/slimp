@@ -31,6 +31,8 @@ data
     int<lower=0> N_new;
     // New predictors
     matrix[N_new, sum(K)] X_new;
+    
+    int use_covariance;
 }
 
 transformed data
@@ -91,10 +93,7 @@ generated quantities
     
     {
         vector[R] alpha_c_ = to_vector(student_t_rng(3, mu_alpha, sigma_alpha));
-        
         vector[R] sigma_ = to_vector(exponential_rng(lambda_sigma));
-        matrix[R, R] L_ = lkj_corr_cholesky_rng(R, eta_L);
-        matrix[R, R] Sigma = diag_pre_multiply(sigma_, L_);
         
         for(r in 1:R)
         {
@@ -112,8 +111,18 @@ generated quantities
             }
         }
         
-        y = multi_normal_cholesky_rng(mu, Sigma);
+        if(use_covariance)
+        {
+            matrix[R, R] L_ = lkj_corr_cholesky_rng(R, eta_L);
+            matrix[R, R] Sigma = diag_pre_multiply(sigma_, L_);
+            y = multi_normal_cholesky_rng(mu, Sigma);
+        }
+        else
+        {
+            for(r in 1:R)
+            {
+                y[, r] = normal_rng(to_vector(mu[, r]), sigma[r]);
+            }
+        }
     }
-    
-    
 }

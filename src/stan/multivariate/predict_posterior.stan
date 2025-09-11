@@ -31,6 +31,8 @@ data
     int<lower=0> N_new;
     // New predictors
     matrix[N_new, sum(K)] X_new;
+    
+    int use_covariance;
 }
 
 transformed data
@@ -86,12 +88,10 @@ transformed data
 
 generated quantities
 {
-    // Expected value and draws of the prior predictive distribution
+    // Expected value and draws of the posterior predictive distribution
     array[N_final] vector[R] mu, y;
     
     {
-        matrix[R, R] Sigma = diag_pre_multiply(sigma, L);
-        
         for(r in 1:R)
         {
             matrix[N_final, K_c[r]] X_c_ = 
@@ -107,6 +107,17 @@ generated quantities
             }
         }
         
-        y = multi_normal_cholesky_rng(mu, Sigma);
+        if(use_covariance)
+        {
+            matrix[R, R] Sigma = diag_pre_multiply(sigma, L);
+            y = multi_normal_cholesky_rng(mu, Sigma);
+        }
+        else
+        {
+            for(r in 1:R)
+            {
+                y[, r] = normal_rng(to_vector(mu[, r]), sigma[r]);
+            }
+        }
     }
 }

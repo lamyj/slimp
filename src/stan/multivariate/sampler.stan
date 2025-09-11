@@ -37,6 +37,8 @@ data
     
     // Shape of the correlation matrix prior
     real<lower=1> eta_L;
+    
+    int use_covariance;
 }
 
 transformed data
@@ -75,6 +77,19 @@ transformed data
         X_bar[K_c_begin[r]:K_c_end[r]] = X_bar_;
         X_c[, K_c_begin[r]:K_c_end[r]] = X_c_;
     }
+    
+    array[!use_covariance ? R : 0] vector[N] yT;
+    if(!use_covariance)
+    {
+        for(r in 1:R)
+        {
+            for(n in 1:N)
+            {
+                yT[r, n] = y[n, r];
+            }
+        }
+    }
+    
 }
  
 #include multivariate/parameters.stan
@@ -85,31 +100,45 @@ model
     beta ~ student_t(3, 0, sigma_beta);
     sigma ~ exponential(lambda_sigma);
     
-    // NOTE:
-    // Exception: lkj_corr_cholesky_lpdf: Random variable[2] is 0, but must be positive!
-    // https://github.com/stan-dev/math/blob/master/stan/math/prim/prob/lkj_corr_cholesky_lpdf.hpp#L25
-    L ~ lkj_corr_cholesky(eta_L);
-    matrix[R, R] Sigma = diag_pre_multiply(sigma, L);
-    
-    array[N] vector[R] mu;
-    for(r in 1:R)
+    if(use_covariance)
     {
-        matrix[N, K_c[r]] X_c_ = X_c[, K_c_begin[r]:K_c_end[r]];
-        vector[K_c[r]] beta_ = beta[K_c_begin[r]:K_c_end[r]];
+        // NOTE:
+        // Exception: lkj_corr_cholesky_lpdf: Random variable[2] is 0, but must be positive!
+        // https://github.com/stan-dev/math/blob/master/stan/math/prim/prob/lkj_corr_cholesky_lpdf.hpp#L25
+        L ~ lkj_corr_cholesky(eta_L);
+        matrix[R, R] Sigma = diag_pre_multiply(sigma, L);
         
-        for(n in 1:N)
+        array[N] vector[R] mu;
+        for(r in 1:R)
         {
-            mu[n, r] = alpha_c[r] + dot_product(X_c_[n], beta_);
+            matrix[N, K_c[r]] X_c_ = X_c[, K_c_begin[r]:K_c_end[r]];
+            vector[K_c[r]] beta_ = beta[K_c_begin[r]:K_c_end[r]];
+            
+            for(n in 1:N)
+            {
+                mu[n, r] = alpha_c[r] + dot_product(X_c_[n], beta_);
+            }
+        }
+        
+        y ~ multi_normal_cholesky(mu, Sigma);
+    }
+    else
+    {
+        for(r in 1:R)
+        {
+            matrix[N, K_c[r]] X_c_ = X_c[, K_c_begin[r]:K_c_end[r]];
+            vector[K_c[r]] beta_ = beta[K_c_begin[r]:K_c_end[r]];
+            yT[r] ~ normal_id_glm(X_c_, alpha_c[r], beta_, sigma[r]);
         }
     }
-    
-    y ~ multi_normal_cholesky(mu, Sigma);
 }
 
 generated quantities
 {
     // Non-centered intercept
     vector[R] alpha;
+    corr_matrix[use_covariance ? R : 0] Sigma;
+    
     for(r in 1:R)
     {
         vector[K_c[r]] X_bar_ = X_bar[K_c_begin[r]:K_c_end[r]];
@@ -117,5 +146,8 @@ generated quantities
         alpha[r] = alpha_c[r] - dot_product(X_bar_, beta_);
     }
     
-    corr_matrix[R] Sigma = multiply_lower_tri_self_transpose(L);
+    if(use_covariance)
+    {
+        Sigma = multiply_lower_tri_self_transpose(L);
+    }
 }

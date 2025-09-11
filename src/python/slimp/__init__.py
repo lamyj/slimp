@@ -8,3 +8,4 @@ from .samples import Samples
 from .stats import hmc_diagnostics, r_squared, summary
 
 from . import multilevel, multivariate, univariate
+from .multivariate import NoCorrelation

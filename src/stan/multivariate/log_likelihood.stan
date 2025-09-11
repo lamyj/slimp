@@ -16,6 +16,8 @@ data
     array[N] vector[R] y;
     // Predictors
     matrix[N, sum(K)] X;
+    
+    int use_covariance;
 }
 
 transformed data
@@ -61,6 +63,7 @@ transformed data
 generated quantities
 {
     vector[N] log_likelihood;
+    
     {
         array[N] vector[R] mu;
         for(r in 1:R)
@@ -74,12 +77,22 @@ generated quantities
             }
         }
         
-        matrix[R, R] Sigma = diag_pre_multiply(sigma, L);
-        
-        // TODO: vectorize
-        for(i in 1:N)
+        if(use_covariance)
         {
-            log_likelihood[i] = multi_normal_cholesky_lpdf(y[i] | mu[i], Sigma);
+            matrix[R, R] Sigma = diag_pre_multiply(sigma, L);
+            
+            // TODO: vectorize
+            for(i in 1:N)
+            {
+                log_likelihood[i] = multi_normal_cholesky_lpdf(y[i] | mu[i], Sigma);
+            }
+        }
+        else
+        {
+            for(r in 1:R)
+            {
+                log_likelihood += normal_lpdf(y[, r] | mu[, r], sigma[r]);
+            }
         }
     }
 }
