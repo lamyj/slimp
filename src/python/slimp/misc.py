@@ -10,4 +10,7 @@ def sample_data_as_xarray(data):
     return xarray.DataArray(
         data["array"],
         dims=["parameter", "chain", "sample"],
-        coords={"parameter": data["columns"]})
+        coords={
+            "parameter": data["columns"],
+            "chain": range(data["array"].shape[1]),
+            "sample": range(data["array"].shape[2])})
