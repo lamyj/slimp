@@ -136,7 +136,8 @@ class Model:
         else:
             return draws.filter(like="mu"), draws.filter(like="y")
     
-    def _generate_quantities(self, name, *args, **kwargs):
+    def _generate_quantities(
+            self, name, converter=misc.sample_data_as_df, *args, **kwargs):
         new_data = self._model_data.new_data(*args, **kwargs)
         
         # NOTE: must only include model parameters
@@ -146,7 +147,7 @@ class Model:
         data = getattr(_slimp, f"{self._model_name}_{name}")(
             new_data, draws, self._sampler_parameters)
         
-        return misc.sample_data_as_df(data)
+        return converter(data)
     
     def __getstate__(self):
         return {
