@@ -13,7 +13,6 @@
 // active. https://discourse.mc-stan.org/t/includes-in-user-header/26093
 #include <stan/math.hpp>
 
-#include <pybind11/numpy.h>
 #include <pybind11/pybind11.h>
 
 #include "slimp/action_parameters.h"

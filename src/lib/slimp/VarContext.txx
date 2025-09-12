@@ -3,10 +3,7 @@
 
 #include "VarContext.h"
 
-#include <cstdint>
 #include <string>
-#include <unordered_map>
-#include <vector>
 
 #include <stan/io/var_context.hpp>
 #include <xtensor/xarray.hpp>

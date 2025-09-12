@@ -2,7 +2,6 @@
 
 #include <string>
 #include <sstream>
-#include <vector>
 
 #include <pybind11/pybind11.h>
 #include <stan/callbacks/logger.hpp>

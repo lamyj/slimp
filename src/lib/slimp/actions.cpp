@@ -12,9 +12,6 @@
 
 #include <xtensor-python/pyarray.hpp>
 
-#include "slimp/api.h"
-#include "slimp/action_parameters.h"
-
 namespace slimp
 {
 

@@ -19,7 +19,6 @@
 
 #include "slimp/action_parameters.h"
 #include "slimp/ArrayWriter.h"
-#include "slimp/Logger.h"
 
 namespace slimp
 {

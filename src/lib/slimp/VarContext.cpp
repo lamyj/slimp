@@ -1,7 +1,6 @@
 #include "VarContext.h"
 
-#include <stdint.h>
-#include <unordered_map>
+#include <cstdint>
 #include <stdexcept>
 #include <string>
 #include <vector>
