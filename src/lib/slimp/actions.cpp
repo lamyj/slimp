@@ -10,6 +10,8 @@
 #include <xtensor/xtensor.hpp>
 #include <xtensor/xview.hpp>
 
+#include <xtensor-python/pyarray.hpp>
+
 #include "slimp/api.h"
 #include "slimp/action_parameters.h"
 
