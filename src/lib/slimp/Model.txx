@@ -14,9 +14,6 @@
 #include <stan/services/sample/hmc_nuts_diag_e_adapt.hpp>
 #include <stan/services/sample/standalone_gqs.hpp>
 
-#include <xtensor/xtensor.hpp>
-#include <xtensor/xview.hpp>
-
 #include "slimp/action_parameters.h"
 #include "slimp/ArrayWriter.h"
 

@@ -6,9 +6,8 @@
 #include <string>
 
 #include <stan/io/var_context.hpp>
-#include <xtensor/xarray.hpp>
 
-#include "slimp/api.h"
+#include "slimp/misc.h"
 
 namespace slimp
 {
@@ -16,7 +15,7 @@ namespace slimp
 template<typename T, std::enable_if_t<std::is_integral<T>::value, bool>>
 void
 VarContext
-::set(std::string const & key, xt::xarray<T> const & array)
+::set(std::string const & key, Array<T> const & array)
 {
     this->_vals_i[key] = {
         array.template begin<xt::layout_type::column_major>(),
@@ -29,7 +28,7 @@ VarContext
 template<typename T, std::enable_if_t<std::is_floating_point<T>::value, bool>>
 void
 VarContext
-::set(std::string const & key, xt::xarray<T> const & array)
+::set(std::string const & key, Array<T> const & array)
 {
     this->_vals_r[key] = {
         array.template begin<xt::layout_type::column_major>(),

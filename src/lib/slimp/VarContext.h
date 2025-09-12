@@ -7,9 +7,9 @@
 #include <vector>
 
 #include <stan/io/var_context.hpp>
-#include <xtensor/xarray.hpp>
 
 #include "slimp/api.h"
+#include "slimp/misc.h"
 
 namespace slimp
 {
@@ -30,10 +30,10 @@ public:
     void set(std::string const & key, double x);
     
     template<typename T, std::enable_if_t<std::is_integral<T>::value, bool> = true>
-    void set(std::string const & key, xt::xarray<T> const & array);
+    void set(std::string const & key, Array<T> const & array);
     
     template<typename T, std::enable_if_t<std::is_floating_point<T>::value, bool> = true>
-    void set(std::string const & key, xt::xarray<T> const & array);
+    void set(std::string const & key, Array<T> const & array);
     
     /// @addtogroup var_context_Interface Interface of std::io::var_context
     /// @{

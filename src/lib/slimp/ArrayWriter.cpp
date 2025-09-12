@@ -10,9 +10,15 @@
 
 #include <Eigen/Dense>
 #include <stan/callbacks/writer.hpp>
+#if __has_include(<xtensor/xtensor.hpp>)
 #include <xtensor/xadapt.hpp>
-#include <xtensor/xtensor.hpp>
+#include <xtensor/xslice.hpp>
 #include <xtensor/xview.hpp>
+#else
+#include <xtensor/containers/xadapt.hpp>
+#include <xtensor/views/xslice.hpp>
+#include <xtensor/views/xview.hpp>
+#endif
 
 namespace slimp
 {

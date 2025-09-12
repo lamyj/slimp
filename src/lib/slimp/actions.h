@@ -8,10 +8,10 @@
 #include <stan/math.hpp>
 
 #include <pybind11/pybind11.h>
-#include <xtensor/xtensor.hpp>
 
 #include "slimp/api.h"
 #include "slimp/action_parameters.h"
+#include "slimp/misc.h"
 #include "slimp/VarContext.h"
 
 namespace slimp
@@ -40,11 +40,10 @@ pybind11::dict SLIMP_API sample(
  */
 template<typename Model>
 pybind11::dict SLIMP_API generate_quantities(
-    pybind11::dict data, xt::xtensor<double, 3> const & draws,
+    pybind11::dict data, Tensor3d const & draws,
     action_parameters::Sample const & parameters);
 
-using ResultsUpdater = std::function<
-    void(xt::xtensor<double, 3> const &, std::size_t)>;
+using ResultsUpdater = std::function<void(Tensor3d const &, std::size_t)>;
 
 /// @brief Sample different contexts from a same model in parallel.
 template<typename Model>
@@ -63,40 +62,34 @@ void parallel_sample(
     ResultsUpdater const & update_results);
 
 /// @brief Compute the effective sample size for each parameter
-xt::xtensor<double, 1> SLIMP_API get_effective_sample_size(
-    xt::xtensor<double, 3> const & draws);
+Tensor1d SLIMP_API get_effective_sample_size(Tensor3d const & draws);
 
 /**
  * @brief Compute the effective sample size for each parameter. This is a
  * parallel wrapper on the outermost dimension around
  * get_effective_sample_size(draws).
  */
-xt::xtensor<double, 2> SLIMP_API get_effective_sample_size(
-    xt::xtensor<double, 4> const & data);
+Tensor2d SLIMP_API get_effective_sample_size(Tensor4d const & data);
 
 /// @brief Compute the potential scale reduction (Rhat) for each parameter
-xt::xtensor<double, 1> SLIMP_API get_potential_scale_reduction(
-    xt::xtensor<double, 3> const & draws);
+Tensor1d SLIMP_API get_potential_scale_reduction(Tensor3d const & draws);
 
 /**
  * @brief Compute the potential scale reduction (Rhat) for each parameter. This
  * is a parallel wrapper on the outermost dimension around
  * get_potential_scale_reduction(draws).
  */
-xt::xtensor<double, 2> SLIMP_API get_potential_scale_reduction(
-    xt::xtensor<double, 4> const & data);
+Tensor2d SLIMP_API get_potential_scale_reduction(Tensor4d const & data);
 
 /// @brief Compute the split-chain potential scale reduction (Rhat) for each parameter
-xt::xtensor<double, 1> SLIMP_API get_split_potential_scale_reduction(
-    xt::xtensor<double, 3> const & draws);
+Tensor1d SLIMP_API get_split_potential_scale_reduction(Tensor3d const & draws);
 
 /**
  * @brief Compute the split-chain potential scale reduction (Rhat) for each
  * parameter. This is a parallel wrapper on the outermost dimension around
  * get_split_potential_scale_reduction(draws).
  */
-xt::xtensor<double, 2> SLIMP_API get_split_potential_scale_reduction(
-    xt::xtensor<double, 4> const & data);
+Tensor2d SLIMP_API get_split_potential_scale_reduction(Tensor4d const & data);
 
 VarContext SLIMP_API to_context(pybind11::dict data);
 }

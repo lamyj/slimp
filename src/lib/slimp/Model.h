@@ -6,10 +6,10 @@
 
 #include <stan/callbacks/logger.hpp>
 #include <stan/io/var_context.hpp>
-#include <xtensor/xtensor.hpp>
 
 #include "slimp/action_parameters.h"
 #include "slimp/Logger.h"
+#include "slimp/misc.h"
 
 namespace slimp
 {
@@ -18,7 +18,7 @@ template<typename T>
 class Model
 {
 public:
-    using Array = xt::xtensor<double, 3>;
+    using Array = Tensor3d;
     
     Model(
         stan::io::var_context & context,

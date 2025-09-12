@@ -11,9 +11,9 @@
 
 #include <Eigen/Dense>
 #include <stan/callbacks/writer.hpp>
-#include <xtensor/xtensor.hpp>
 
 #include "slimp/api.h"
+#include "slimp/misc.h"
 
 namespace slimp
 {
@@ -22,7 +22,7 @@ namespace slimp
 class SLIMP_API ArrayWriter: public stan::callbacks::writer
 {
 public:
-    using Array = xt::xtensor<double, 3>;
+    using Array = Tensor3d;
     
     ArrayWriter() = delete;
     ArrayWriter(ArrayWriter const &) = delete;
