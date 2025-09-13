@@ -3,7 +3,15 @@
 
 #include "slimp/ArrayWriter.h"
 
+#if __has_include(<xtensor/xtensor.hpp>)
+#include <xtensor/xarray.hpp>
+#include <xtensor/xbuilder.hpp>
 #include <xtensor/xview.hpp>
+#else
+#include <xtensor/containers/xarray.hpp>
+#include <xtensor/generators/xbuilder.hpp>
+#include <xtensor/views/xview.hpp>
+#endif
 
 BOOST_AUTO_TEST_CASE(Names)
 {
