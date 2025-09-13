@@ -11,6 +11,18 @@
 
 #include <Eigen/Dense>
 #include <stan/callbacks/writer.hpp>
+#include <stan/version.hpp>
+
+#if __has_include(<xtensor/xtensor.hpp>)
+#include <xtensor/xadapt.hpp>
+#include <xtensor/xslice.hpp>
+#include <xtensor/xview.hpp>
+#else
+#include <xtensor/containers/xadapt.hpp>
+#include <xtensor/views/xslice.hpp>
+#include <xtensor/views/xview.hpp>
+#endif
+
 
 #include "slimp/api.h"
 #include "slimp/misc.h"
@@ -45,8 +57,15 @@ public:
     void operator()(std::vector<std::string> const & names) override;
     void operator()(std::vector<double> const & state) override;
     void operator()(std::string const & message) override;
+
+#if STAN_MAJOR < 2 || STAN_MAJOR == 2 && STAN_MINOR <= 36
     void operator()(
         Eigen::Ref<Eigen::Matrix<double, -1, -1>> const & values) override;
+#else
+    void operator()(Eigen::Matrix<double, -1, -1> const & values) override;
+    void operator()(Eigen::Matrix<double, -1, 1> const & values) override;
+    void operator()(Eigen::Matrix<double, 1, -1> const & values) override;
+#endif
     /// @}
     
     std::vector<std::string> const & names() const;
@@ -56,6 +75,22 @@ private:
     size_t _chain, _offset, _skip, _draw;
     std::vector<std::string> _names;
     std::map<size_t, std::vector<std::string>> _messages;
+    
+    template<typename T>
+    void _write_1d_container(T const & values)
+    {
+        using namespace xt::placeholders;
+        
+        std::size_t const size = values.size()-this->_skip;
+        auto const source = xt::adapt(
+            values.data()+this->_skip, size, xt::no_ownership(),
+            std::vector<std::size_t>{size});
+        auto target = xt::view(
+            this->_array, xt::range(this->_offset, _), this->_chain, this->_draw);
+        target = source;
+        
+        ++this->_draw;
+    }
 };
 
 }

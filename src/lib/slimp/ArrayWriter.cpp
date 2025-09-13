@@ -42,16 +42,7 @@ void
 ArrayWriter
 ::operator()(std::vector<double> const & state)
 {
-    using namespace xt::placeholders;
-    
-    auto const parameters = state.size()-this->_skip;
-    xt::view(
-            this->_array, xt::range(this->_offset, _), this->_chain, this->_draw
-        ) = xt::adapt(
-            state.data()+this->_skip, parameters, xt::no_ownership(),
-            std::vector<std::size_t>{parameters});
-    
-    ++this->_draw;
+    this->_write_1d_container(state);
 }
 
 void
@@ -63,14 +54,17 @@ ArrayWriter
 
 void
 ArrayWriter
+#if STAN_MAJOR < 2 || STAN_MAJOR == 2 && STAN_MINOR <= 36
 ::operator()(Eigen::Ref<Eigen::Matrix<double, -1, -1>> const & values)
+#else
+::operator()(Eigen::Matrix<double, -1, -1> const & values)
+#endif
 {
     using namespace xt::placeholders;
     
     // From Stan documentation, "The input is expected to have parameters in the
     // rows and samples in the columns".
     
-    // auto const source_parameters = values.rows();
     auto const draws = values.cols();
     
     auto const source = xt::view(
@@ -87,6 +81,22 @@ ArrayWriter
     
     this->_draw += draws;
 }
+
+#if !(STAN_MAJOR < 2 || STAN_MAJOR == 2 && STAN_MINOR <= 36)
+void
+ArrayWriter
+::operator()(Eigen::Matrix<double, -1, 1> const & values)
+{
+    this->_write_1d_container(values);
+}
+
+void
+ArrayWriter
+::operator()(Eigen::Matrix<double, 1, -1> const & values)
+{
+    this->_write_1d_container(values);
+}
+#endif
 
 std::vector<std::string> const &
 ArrayWriter
